@@ -1,42 +1,49 @@
-import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import App from "./App";
+import { Suspense, lazy } from "react";
 import {
-  Dashboard,
-  Team,
-  Invoices,
-  Contacts,
-  Form,
-  Bar,
-  Line,
-  Pie,
-  FAQ,
-  Geography,
-  Calendar,
-  Stream,
-} from "./scenes";
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { Box } from "@mui/material";
+import { Dashboard, Navbar, SideBar } from "./scenes";
+import { ProtectedRoute } from "./scenes/ProtectedRoute";
+import { Login } from "./scenes/Login";
+import { Services } from "./scenes/services";
+import { Tickets } from "./scenes/tickets";
+import { Queues } from "./scenes/queues";
+import { Loading } from "./components/Loading";
+import {Users} from "./scenes/users";
+import { NotAllowed } from "./scenes/notAllowed";
+import App from "./App";
 
-const AppRouter = () => {
+export const AppRouter = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<App />}>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/team" element={<Team />} />
-          <Route path="/contacts" element={<Contacts />} />
-          <Route path="/invoices" element={<Invoices />} />
-          <Route path="/form" element={<Form />} />
-          <Route path="/calendar" element={<Calendar />} />
-          <Route path="/bar" element={<Bar />} />
-          <Route path="/pie" element={<Pie />} />
-          <Route path="/stream" element={<Stream />} />
-          <Route path="/line" element={<Line />} />
-          <Route path="/faq" element={<FAQ />} />
-          <Route path="/geography" element={<Geography />} />
-        </Route>
+        <Route path="/login" element={<Login />} />
+        <Route path="unauthorized" element={<NotAllowed />} />
+        
+          <Route path="/" element={<App />}>
+            <Route index element={
+              <ProtectedRoute allowedRoles={["admin", "user", "billing", "doctor"]}>
+              <Dashboard />
+              </ProtectedRoute>
+              } />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="services" element={<Services />} />
+            <Route path="tickets" element={<Tickets />} />
+            <Route path="queues" element={<Queues />} />
+            <Route path="users" element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+              <Users />
+              </ProtectedRoute>
+              } />
+
+            
+          </Route>
+        
       </Routes>
     </Router>
   );
 };
-
-export default AppRouter;

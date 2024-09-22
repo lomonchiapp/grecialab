@@ -28,3 +28,17 @@ body,
 ::-webkit-scrollbar-track:hover {
   background: #555;
 }
+
+.center-toast {
+  text-align: center;
+}
+
+.center-toast h3 {
+  margin: 0;
+  font-size: 1.5em;
+}
+
+.center-toast h6 {
+  margin: 0;
+  font-size: 1em;
+}

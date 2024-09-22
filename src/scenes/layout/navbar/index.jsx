@@ -1,9 +1,11 @@
 import {
   Box,
   IconButton,
-  InputBase,
+  Menu,
+  MenuItem,
   useMediaQuery,
   useTheme,
+  ClickAwayListener,
 } from "@mui/material";
 import { tokens, ColorModeContext } from "../../../theme";
 import { useContext } from "react";
@@ -13,10 +15,15 @@ import {
   MenuOutlined,
   NotificationsOutlined,
   PersonOutlined,
-  SearchOutlined,
   SettingsOutlined,
 } from "@mui/icons-material";
 import { ToggledContext } from "../../../App";
+import React, { useState } from "react";
+import { signOut } from "firebase/auth";
+import { FIREBASE_AUTH } from "../../../firebase";
+import { useNavigate } from "react-router-dom";
+import { Notifications } from "../../../components/notifications/Notifications";
+
 const Navbar = () => {
   const theme = useTheme();
   const colorMode = useContext(ColorModeContext);
@@ -24,6 +31,41 @@ const Navbar = () => {
   const isMdDevices = useMediaQuery("(max-width:768px)");
   const isXsDevices = useMediaQuery("(max-width:466px)");
   const colors = tokens(theme.palette.mode);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [notificationsAnchorEl, setNotificationsAnchorEl] = useState(null);
+  const navigate = useNavigate();
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleNotificationsOpen = (event) => {
+    setNotificationsAnchorEl(event.currentTarget);
+  };
+
+  const handleNotificationsClose = () => {
+    setNotificationsAnchorEl(null);
+  };
+
+  const handleClickAway = () => {
+    handleNotificationsClose();
+  };
+
+  const handleLogout = () => {
+    signOut(FIREBASE_AUTH)
+      .then(() => {
+        console.log("Logged out successfully");
+        navigate("/login");
+        handleMenuClose();
+      })
+      .catch((error) => {
+        console.error("Error logging out", error);
+      });
+  };
+
   return (
     <Box
       display="flex"
@@ -38,18 +80,6 @@ const Navbar = () => {
         >
           <MenuOutlined />
         </IconButton>
-        <Box
-          display="flex"
-          alignItems="center"
-          bgcolor={colors.primary[400]}
-          borderRadius="3px"
-          sx={{ display: `${isXsDevices ? "none" : "flex"}` }}
-        >
-          <InputBase placeholder="Search" sx={{ ml: 2, flex: 1 }} />
-          <IconButton type="button" sx={{ p: 1 }}>
-            <SearchOutlined />
-          </IconButton>
-        </Box>
       </Box>
 
       <Box>
@@ -60,15 +90,40 @@ const Navbar = () => {
             <DarkModeOutlined />
           )}
         </IconButton>
-        <IconButton>
+        <IconButton onClick={handleNotificationsOpen}>
           <NotificationsOutlined />
+          
+          <Menu
+        anchorEl={notificationsAnchorEl}
+        open={Boolean(notificationsAnchorEl)}
+        onClose={handleNotificationsClose}
+        PaperProps={{
+          style: {
+            maxHeight: '400px',
+            width: '300px',
+          },
+        }}
+        BackdropProps={{
+          invisible: true,
+        }}
+      >
+        <Notifications />
+      </Menu>
+
         </IconButton>
         <IconButton>
           <SettingsOutlined />
         </IconButton>
-        <IconButton>
+        <IconButton onClick={handleMenuOpen}>
           <PersonOutlined />
         </IconButton>
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+        >
+          <MenuItem onClick={handleLogout}>Logout</MenuItem>
+        </Menu>
       </Box>
     </Box>
   );
