@@ -1,5 +1,5 @@
-import React from "react";
-import { Box, Typography, Grid, IconButton } from "@mui/material";
+import React, {useState, useEffect} from "react";
+import { Box, Typography, Grid, IconButton, Button } from "@mui/material";
 import { useGlobalState } from "../../../hooks/global/useGlobalState";
 import { useUserState } from "../../../hooks/global/useUserState";
 import { tokens } from "../../../theme";
@@ -13,15 +13,22 @@ import {
   XCircle,
 } from "@phosphor-icons/react";
 import { updateToBilled, updateToBilling } from "../../../hooks/tickets/updateTicket";
+import { ArrowBack } from "@mui/icons-material";
+import { ArrowForward } from "@mui/icons-material";
 
 export const PendingList = () => {
   const { user } = useUserState();
-  const { setBillingTickets, billingTickets } = useBillingState();
   const { tickets } = useGlobalState();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [ticketsPerPage, setTicketsPerPage] = useState(5);
   const filteredTickets = tickets.filter(
     (ticket) => ticket.status === "pending"
   );
   const sortTickets = filteredTickets.sort((a, b) => a.createdAt - b.createdAt);
+  const indexOfLastTicket = currentPage * ticketsPerPage;
+  const indexOfFirstTicket = indexOfLastTicket - ticketsPerPage;
+  const currentTickets = sortTickets.slice(indexOfFirstTicket, indexOfLastTicket);
+  const totalPages = Math.ceil(sortTickets.length / ticketsPerPage);
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
@@ -62,7 +69,13 @@ export const PendingList = () => {
       borderRadius: "5px",
       marginBottom: "5px",
     },
+    ticketNo: {
+      fontWeight: "bold",
+      fontFamily: "monospace", 
+    },
   };
+  //Cambio de pagina
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <Box sx={styles.waitingList}>
@@ -71,16 +84,16 @@ export const PendingList = () => {
           Pacientes en espera ({filteredTickets.length})
         </Typography>
       </Box>
-      {sortTickets.length === 0 ? (
+      {currentTickets.length === 0 ? (
         <Box sx={styles.emptyBox}>
           <EmptyQueue />
         </Box>
       ) : (
-        sortTickets.map((ticket) => (
+        currentTickets.map((ticket) => (
           <Box sx={styles.ticket} key={ticket.id}>
-            <Box>
+            <Box sx={{display:'flex', alignItems:'center', gap: 2}}>
               <Box sx={styles.codeBox}>
-                <Typography variant="h6">{ticket.ticketCode}</Typography>
+                <Typography style={styles.ticketNo}>{ticket.ticketCode}</Typography>
               </Box>
               <Box>
                 <Typography variant="body1">{ticket.patientName}</Typography>
@@ -101,15 +114,33 @@ export const PendingList = () => {
               >
                 <XCircle />
               </IconButton>
-              {ticket.status === "billing" && (
-                <Box>
-                  <Typography>Facturando</Typography>
-                </Box>
-              )}
             </Box>
           </Box>
         ))
       )}
+      <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: 2 }}>
+      <IconButton
+          onClick={() => paginate(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          <ArrowBack />
+        </IconButton>
+        {Array.from({ length: Math.ceil(sortTickets.length / ticketsPerPage) }, (_, index) => (
+          <Button
+            key={index + 1}
+            onClick={() => paginate(index + 1)}
+            variant={currentPage === index + 1 ? 'contained' : 'outlined'}
+          >
+            {index + 1}
+          </Button>
+        ))}
+         <IconButton
+          onClick={() => paginate(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          <ArrowForward />
+        </IconButton>
+      </Box>
     </Box>
   );
 };

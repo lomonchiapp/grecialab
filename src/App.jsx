@@ -19,7 +19,7 @@ function App() {
   const [theme, colorMode] = useMode();
   const [toggled, setToggled] = useState(false);
   const values = { toggled, setToggled };
-  const {isAuthenticated} = useAuth();
+  const {isAuthenticated,  setIsAuthenticated} = useAuth();
   const [popUpNotification, setPopUpNotification] = useState(null);
   const [popUpOpen, setPopupOpen] = useState(false);
 
@@ -49,9 +49,9 @@ function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(FIREBASE_AUTH, (user) => {
       if (user) {
-        isAuthenticated(true);
+        setIsAuthenticated(true);
       } else {
-        isAuthenticated(false);
+        setIsAuthenticated(false);
       }
     });
 

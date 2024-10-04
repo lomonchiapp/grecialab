@@ -4,30 +4,26 @@ import {
   FormControl,
   TextField,
   Typography,
-  FormHelperText,
   MenuItem,
   Button,
   Select,
 } from "@mui/material";
 import { serverTimestamp } from "firebase/firestore";
-import { useServiceState } from "../../hooks/global/useServiceState";
-import { useQstate } from "../../hooks/global/useQstate";
-import { database } from "../../firebase";
+import { useGlobalState } from "../../hooks/global/useGlobalState";
 import { useTheme } from "@mui/material";
 import { tokens } from "../../theme";
 import { newTicket } from "../../hooks/tickets/newTicket";
-import { useGlobalState } from "../../hooks/global/useGlobalState";
+import axios from "axios";
 
-export const NewTicket = ({ setOpen, refresh }) => {
-  const { services, selectedQueue, setSelectedQueue, fetchQueues, queues } = useGlobalState();
+export const NewTicket = ({ setOpen }) => {
+  const { services, selectedQueue, setSelectedQueue, fetchQueues, queues, tickets } = useGlobalState();
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const generatedTicket = `${selectedQueue?.name} - ${selectedQueue?.count?.toString().padStart(2, "0")}`;
-
+  const pendingTickets = tickets.filter((ticket) => ticket.status === "pending");
   const styles = {
     tktTxtLbl: {
       fontSize: "1rem",
-
       marginBottom: "10px",
     },
     ticketText: {
@@ -53,22 +49,19 @@ export const NewTicket = ({ setOpen, refresh }) => {
     service: "",
     status: "pending", // 1 = pending
     ticketCode: generatedTicket,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    //Generate random alphanumeric string for ticket number:
-    //number:
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   });
 
-    // Update ticketCode once generatedTicket is available
-    useEffect(() => {
-      if (generatedTicket) {
-        setTicket(prevTicket => ({
-          ...prevTicket,
-          ticketCode: generatedTicket,
-        }));
-      }
-    }, [generatedTicket]);
-  
+  // Update ticketCode once generatedTicket is available
+  useEffect(() => {
+    if (generatedTicket) {
+      setTicket(prevTicket => ({
+        ...prevTicket,
+        ticketCode: generatedTicket,
+      }));
+    }
+  }, [generatedTicket]);
 
   const handleServiceChange = (e) => {
     const serviceId = e.target.value;
@@ -80,9 +73,46 @@ export const NewTicket = ({ setOpen, refresh }) => {
     console.log("Selected Queue:", correspondingQueue);
     console.log("Selected Service:", correspondingService);
   }
+
+  const handlePrint = async () => {
+    try {
+      const serviceName = services.find((service) => service.id === ticket.service);
+      const createdAt = new Date(ticket.createdAt);
+  
+      const formattedDate = createdAt.toLocaleDateString('en-GB'); // Format date as DD/MM/YYYY
+      const formattedTime = createdAt.toLocaleTimeString('en-GB'); // Format time as HH:MM:SS
+  
+      const payload = {
+        patientName: ticket.patientName,
+        service: serviceName.name,
+        ticketCode: ticket.ticketCode,
+        pplBefore: pendingTickets.length,
+        date: formattedDate,
+        time: formattedTime,
+      };
+      console.log('Payload:', payload); // Log the payload to verify its structure
+  
+      const response = await fetch('http://localhost:3000/print', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+  
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('Text sent successfully:', responseData);
+      } else {
+        console.error('Error sending text:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error sending text:', error);
+    }
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
     await newTicket(ticket, selectedQueue);
+    await handlePrint();
     setOpen(false);
   };
 
@@ -94,7 +124,7 @@ export const NewTicket = ({ setOpen, refresh }) => {
           label="Nombre de Paciente"
           variant="outlined"
           margin="normal"
-          value={ticket.patientName}
+          value={ticket.patientName || ''}
           onChange={(e) =>
             setTicket({ ...ticket, patientName: e.target.value })
           }
@@ -103,7 +133,7 @@ export const NewTicket = ({ setOpen, refresh }) => {
           label="Servicio"
           variant="outlined"
           margin="normal"
-          value={ticket.service}
+          value={ticket.service || ''}
           onChange={handleServiceChange}
         >
           {services.map((service, index) => (
