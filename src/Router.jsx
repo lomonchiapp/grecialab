@@ -6,7 +6,7 @@ import {
 } from "react-router-dom";
 import { Dashboard, Navbar, SideBar } from "./scenes";
 import { ProtectedRoute } from "./scenes/ProtectedRoute";
-import { Login } from "./scenes/Login";
+import { Login } from "./scenes/Login/index.jsx";
 import { Services } from "./scenes/services";
 import { Tickets } from "./scenes/tickets";
 import { Queues } from "./scenes/queues";
@@ -33,7 +33,7 @@ export const AppRouter = () => {
                 <Dashboard />
               </ProtectedRoute>
             }
-          />
+          />  
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="services" element={<Services />} />
           <Route path="tickets" element={<Tickets />} />
