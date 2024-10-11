@@ -5,16 +5,16 @@ import { useUserState } from "../../../hooks/global/useUserState";
 import { tokens } from "../../../theme";
 import { useTheme } from "@mui/material/styles";
 
-export const TotalTickets = () => {
+export const BCancelledTickets = () => {
   const { tickets } = useGlobalState();
   const { user } = useUserState();
   const now = new Date();
   const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-  const totalTickets = tickets.filter((ticket) => {
-    const finishedAtDate = ticket?.updatedAt; // Convert Firestore timestamp to Date
+  const cancelledTickets = tickets.filter((ticket) => {
+    const finishedAtDate = ticket.BcancelledAt?.toDate(); // Convert Firestore timestamp to Date
     return (
-      ticket.service === user?.service.id &&
+      ticket.status === "Bcancelled" &&  // Bcancelled es cancelado en facturacion
       finishedAtDate >= twentyFourHoursAgo &&
       finishedAtDate <= now
     );
@@ -63,10 +63,10 @@ export const TotalTickets = () => {
   return (
     <Card sx={styles.finishedTickets}>
       <Box sx={styles.headerContainer}>
-        <Typography sx={styles.header}>Tickets Generados</Typography>
+        <Typography sx={styles.header}>Tickets Cancelados</Typography>
       </Box>
       <Box sx={styles.qtyContainer}>
-        <Typography sx={styles.qty}>{totalTickets.length}</Typography>
+        <Typography sx={styles.qty}>{cancelledTickets.length}</Typography>
       </Box>
     </Card>
   );

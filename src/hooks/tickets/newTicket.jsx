@@ -17,7 +17,7 @@ export const newTicket = async (ticket, queue) => {
         const printData = formatPrintData(ticket);
         console.log('Formatted Print Data:', printData); // Log the print data
        // sendPrintJob(printData);
-        
+        sendPrintJob(printData);
         return newTicketData.id;
     } catch (error) {
         console.error('Error adding document: ', error);

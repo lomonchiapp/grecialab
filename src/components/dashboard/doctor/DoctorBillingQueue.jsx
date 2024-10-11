@@ -1,11 +1,16 @@
-import React, {useEffect} from 'react'
-import { Box, Typography } from '@mui/material'
+import React, {useEffect, useState} from 'react'
+import { Box, IconButton, Typography } from '@mui/material'
 import { useGlobalState } from '../../../hooks/global/useGlobalState'
 import { useUserState } from '../../../hooks/global/useUserState'
 import {tokens} from '../../../theme'
+import {Button} from '@mui/material'
 import {useTheme} from '@mui/material/styles'
+import { ChevronLeft } from '@mui/icons-material'
+import { ChevronRight } from '@mui/icons-material'
 
 const DoctorBillingQueue = () => {
+    const [currentPage, setCurrentPage] = useState(1)
+    const ticketsPerPage = 5
 
     const {tickets} = useGlobalState()
     const {user, fetchUser} = useUserState()
@@ -45,19 +50,50 @@ const DoctorBillingQueue = () => {
       fetchUser()
     }, [fetchUser])
 
+      // Calculate paginated tickets
+      const indexOfLastTicket = currentPage * ticketsPerPage;
+      const indexOfFirstTicket = indexOfLastTicket - ticketsPerPage;
+      const paginatedTickets = filteredTickets.slice(indexOfFirstTicket, indexOfLastTicket);
+  
+      // Handle page change
+      const handleNextPage = () => {
+          if (currentPage < Math.ceil(filteredTickets.length / ticketsPerPage)) {
+              setCurrentPage(currentPage + 1);
+          }
+      };
+  
+      const handlePreviousPage = () => {
+          if (currentPage > 1) {
+              setCurrentPage(currentPage - 1);
+          }
+      };
 
   return (
     <Box sx={styles.billingQueue}>
       <Box sx={styles.headerContainer}>
       <Typography sx={styles.header}>En facturación ({filteredTickets.length})</Typography>
       </Box>
-      {filteredTickets.map(ticket => (
+      {paginatedTickets.map(ticket => (
         <Box sx={styles.ticket} key={ticket.id}>
           <Typography variant="h6">{ticket.ticketCode}</Typography>
           <Typography variant="body1">{ticket.patientName}</Typography>
         </Box>
         ))    
     }
+                <Box sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '10px',
+                  backgroundColor: colors.primary[400],
+                  borderRadius: '5px',
+                }}>
+                  <IconButton onClick={handlePreviousPage}>
+                    <ChevronLeft />
+                  </IconButton>
+                  <IconButton onClick={handleNextPage}>
+                    <ChevronRight />
+                  </IconButton>
+            </Box>
     </Box>
   )
 }

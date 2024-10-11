@@ -14,13 +14,14 @@ import { roles } from "../../utils/roles/roles";
 import { useGlobalState } from "../../hooks/global/useGlobalState";
 
 export const NewUser = ({ setOpen, refresh }) => {
-  const { services } = useGlobalState();
+  const { services, billingPositions } = useGlobalState();
   const [user, setUser] = useState({
     name: "",
     email: "",
     password: "",
     role: "",
     service: {},
+    billingPosition: {},
   });
 
   const onSubmit = async (e) => {
@@ -28,7 +29,6 @@ export const NewUser = ({ setOpen, refresh }) => {
     await createUser(user);
     setOpen(false);
   };
-
 
   return (
     <Box>
@@ -80,27 +80,53 @@ export const NewUser = ({ setOpen, refresh }) => {
         <FormHelperText>Selecciona el rol del usuario a crear.</FormHelperText>
         {user.role == "doctor" && (
           <FormControl fullWidth>
-          <Select
-            sx={{my:2}}
-            label="Servicio"
-            size="small"
-            variant="outlined"
-            margin="normal"
-            value={user.service}
-            onChange={(e) => setUser({ ...user, service: e.target.value })}
-          >
-            {services.map((service) => (
-              <MenuItem key={service.id} value={service}>
-                {service.name}
-              </MenuItem>
-            ))}
-          </Select>
-          <FormHelperText>Selecciona el servicio al que pertenece el doctor.</FormHelperText>
-
+            <Select
+              sx={{ my: 2 }}
+              label="Servicio"
+              size="small"
+              variant="outlined"
+              margin="normal"
+              value={user.service}
+              onChange={(e) => setUser({ ...user, service: e.target.value })}
+            >
+              {services.map((service) => (
+                <MenuItem key={service.id} value={service}>
+                  {service.name}
+                </MenuItem>
+              ))}
+            </Select>
+            <FormHelperText>
+              Selecciona el servicio al que pertenece el doctor.
+            </FormHelperText>
+          </FormControl>
+        )}
+        {user.role == "billing" && (
+          <FormControl fullWidth>
+            <Select
+              sx={{ my: 2 }}
+              label="Puesto de Facturacion"
+              size="small"
+              variant="outlined"
+              margin="normal"
+              value={user.billingPosition}
+              onChange={(e) => setUser({ ...user, billingPosition: e.target.value })}
+            >
+              {billingPositions.length > 0 ? (
+                billingPositions.map((position) => (
+                  <MenuItem key={position.id} value={position}>
+                    {position.name}
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem key={1} value={1}>
+                  Sin Puesto, cree uno.
+                </MenuItem>
+              )}
+            </Select>
+            <FormHelperText>Seleccione un puesto de facturación</FormHelperText>
           </FormControl>
         )}
 
-        
         <Button variant="contained" color="primary" onClick={onSubmit}>
           Guardar
         </Button>

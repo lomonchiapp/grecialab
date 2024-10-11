@@ -1,7 +1,7 @@
-import React from 'react'
+import React, {useState} from 'react'
 import { Box, Typography, Grid, Switch } from '@mui/material'
 import { useGlobalState } from '../../../hooks/global/useGlobalState'
-import { BillingList } from '../../../components/dashboard/billing/BillingList'
+import { BillingPosition } from '../../../components/dashboard/billing/BillingPosition'
 import {useTheme} from '@mui/material'
 import {tokens} from '../../../theme'
 import { FinishedTickets } from '../../../components/dashboard/common/FinishedTickets'
@@ -14,6 +14,7 @@ import { BilledTickets } from '../../../components/dashboard/billing/BilledTicke
 export const BillingDashboard = () => {
     const theme = useTheme();
    const colors = tokens(theme.palette.mode);
+   const [canBill, setCanBill] = useState(false);
     const styles = {
 
         switchBox: {
@@ -29,10 +30,10 @@ export const BillingDashboard = () => {
     <Grid sx={styles.dashboard} container spacing={2}>
         
         <Grid item xs={8}>
-        <PendingList />
+        <PendingList canBill={canBill} />
         </Grid>
         <Grid item xs={4}>
-        <BillingList />
+        <BillingPosition canBill={canBill} setCanBill={setCanBill} />
         </Grid>
         <Grid item xs={3}>
         <BilledTickets />

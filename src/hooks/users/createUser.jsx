@@ -32,10 +32,14 @@ export const createUser = async (user) => {
             email: user.email,
             name: user.name,
             role: user.role, // Add any additional user data here
+            
         };
 
         if (user.service) {
             userDoc.service = user.service;
+        }
+        if (user.billingPosition) {
+            userDoc.billingPosition = user.billingPosition;
         }
 
         await addDoc(collection(database, 'users'), userDoc);

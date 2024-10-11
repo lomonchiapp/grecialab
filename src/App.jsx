@@ -24,12 +24,14 @@ function App() {
   const [popUpOpen, setPopupOpen] = useState(false);
 
   // Fetch Global Data
-  const {fetchServices, subscribeToTickets, fetchQueues, fetchTickets, fetchUsers} = useGlobalState();
+  const {fetchServices, subscribeToTickets, fetchQueues, fetchTickets, fetchUsers, fetchVideos, fetchBillingPositions} = useGlobalState();
 
   useEffect(() => {
     fetchServices();
     fetchTickets();
     fetchUsers();
+    fetchVideos()
+    fetchBillingPositions()
     const unsubscribeQueues = fetchQueues();
     const unsubscribeTickets = subscribeToTickets((ticket) => {
       setPopUpNotification(ticket);

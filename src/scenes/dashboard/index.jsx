@@ -18,7 +18,7 @@ import { WaitingList } from "../../components/dashboard/doctor/WaitingList";
 import { ActualTicket } from "../../components/dashboard/doctor/ActualTicket";
 import { DoctorDashboard } from "./DoctorDashboard";
 import { BillingDashboard } from "./BillingDashboard";
-
+import { GeneralDashboard } from "./GeneralDashboard";
 function Dashboard() {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -39,11 +39,12 @@ function Dashboard() {
         {/* CONDITIONAL DASHBOARDS DEPENDING ROLE */}
         {role === "admin" && (
           <>
-            <BillingDashboard />
+            <GeneralDashboard />
           </>
         )}
         {role === "doctor" && <DoctorDashboard />}
         {role === "billing" && <BillingDashboard />}
+        {role === "general" && <GeneralDashboard />}
       </Box>
     </Box>
   );

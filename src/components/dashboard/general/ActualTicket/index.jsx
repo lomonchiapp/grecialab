@@ -8,70 +8,54 @@ import { useEffect } from "react";
 import { useState } from "react";
 import { Button } from "@mui/material";
 import {
-  updateToCancelled,
-  updateToFinished,
   updateToProcessing,
+  updateToFinished,
+  updateToCancelled,
 } from "../../../../hooks/tickets/updateTicket";
 import { Check, CheckCircle, XCircle } from "@phosphor-icons/react";
+import { useBillingState } from "../../../../hooks/global/useBillingState";
 
 export const ActualTicket = () => {
-  const { tickets, fetchTickets, services } = useGlobalState();
-  const { user } = useUserState();
-  const [processingTicket, setProcessingTicket] = useState(null);
+  // Estilos
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const [enabledButton, setEnabledButton] = useState(false);
-
-  useEffect(() => {
-    console.log("Tickets:", tickets);
-    console.log("User:", user);
-
-    const filteredTickets = tickets.filter(
-      (ticket) => {
-        console.log("Ticket Status:", ticket.status);
-        return ticket.status === "inQueue" && ticket.service === user?.service.id;
-      }
-    );
-
-    if (filteredTickets.length > 0) {
-      setEnabledButton(true);
-    } else {
-      setEnabledButton(false);
-    }
-  }, [tickets, user]);
 
   const styles = {
     container: {
       padding: "10px",
-      backgroundColor: colors.cyanAccent[900],
+      backgroundColor: colors.gray[900],
       borderRadius: "10px",
       minHeight: "100%",
       border: `2px solid ${colors.gray[100]}`,
     },
     ticket: {
       padding: "10px",
+      flexDirection: "row",
+      display: "flex",
+      justifyContent: "space-between",
       margin: "10px",
-      backgroundColor: colors.gray[900],
+      backgroundColor: colors.gray[700],
       borderRadius: "5px",
     },
     ticketContainer: {
       padding: "10px",
-      backgroundColor: colors.gray[800],
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: colors.cyanAccent[800],
       borderRadius: "5px",
     },
     ticketCode: {
       color: colors.primary[100],
       fontFamily: "monospace",
       textAlign: "center",
-      fontSize: "35px",
+      fontSize: "34px",
       fontWeight: "bold",
     },
     ticketHeader: {
       color: colors.primary[100],
-      fontFamily: "monospace",
-      textAlign: "center",
-      border: `1px solid ${colors.gray[700]}`,
-      mb:1,
+      mb: 1,
       fontSize: "14px",
       fontWeight: "bold",
     },
@@ -83,7 +67,6 @@ export const ActualTicket = () => {
       fontWeight: "bold",
     },
     headerContainer: {
-      borderBottom: `1px solid ${colors.primary[400]}`,
       marginBottom: "10px",
     },
     btnContainer: {
@@ -102,7 +85,7 @@ export const ActualTicket = () => {
       fontSize: "14px",
       fontWeight: "bold",
       fontFamily: "monospace",
-      pl:2,
+      pl: 2,
     },
     patientLabel: {
       color: colors.primary[100],
@@ -117,62 +100,93 @@ export const ActualTicket = () => {
     },
     idleText: {
       color: colors.primary[100],
-      fontSize: "24px",
+      fontSize: "14px",
       fontWeight: "bold",
     },
     helperText: {
       color: colors.primary[100],
       fontSize: "10px",
     },
+  };
+  // Estado Global
+  const { tickets, subscribeToTickets, services } = useGlobalState();
+  const { user } = useUserState();
+  // Estado Local
+  const [enabledButton, setEnabledButton] = useState(false);
+  const [processingTicket, setProcessingTicket] = useState(null);
 
+  const handleFinishTurn = async () => {
+    await updateToFinished(processingTicket.id, user);
+  };
+
+// Helper function to filter tickets by status
+const filterTicketsByStatus = (tickets, status) => {
+  return tickets.filter(ticket => ticket.status === status);
+};
+
+// Helper function to sort tickets by creation date
+const sortTicketsByCreationDate = (tickets) => {
+  return tickets.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+};
+
+// Function to get the next ticket in queue
+const getNextTicketInQueue = (tickets) => {
+  const inQueueTickets = filterTicketsByStatus(tickets, "inQueue");
+  const sortedTickets = sortTicketsByCreationDate(inQueueTickets);
+  return sortedTickets[0];
+};
+
+const handleTakeNext = async () => {
+  try {
+    const nextTicket = getNextTicketInQueue(tickets);
+
+    if (nextTicket) {
+      await updateToProcessing(nextTicket.id, user, services);
+      setProcessingTicket(nextTicket);
+      console.log(`Processing ticket with ID: ${nextTicket.id}`);
+      console.log(processingTicket)
+    } else {
+      console.warn("No tickets in queue");
+    }
+  } catch (error) {
+    console.error("Error taking next ticket:", error);
+  }
+};
+
+  useEffect(() => {
+    const unsubscribe = subscribeToTickets();
+    return () => unsubscribe();
+  }, [subscribeToTickets]);
+
+  useEffect(() => {
+    const filteredTickets = tickets.filter((ticket) => {
+      console.log("Ticket Status:", ticket.status);
+      return ticket.status === "inQueue";
+    });
+    if (filteredTickets.length > 0) {
+      setEnabledButton(true);
+    } else {
+      setEnabledButton(false);
+    }
+  }, [tickets, user]);
+
+  const handleFinish = async (ticketId) => {
+    await updateToFinished(ticketId, user);
   };
 
   useEffect(() => {
-    if (user && user.service) {
+    if (user) {
       const filteredTickets = tickets.filter(
-        (ticket) => ticket.service === user.service.id
+        (ticket) => ticket.status === "processing"
       );
       const processingTicket = filteredTickets.find(
-        (ticket) => ticket.status === "processing" 
+        (ticket) => ticket.user?.id === user.id
       );
       setProcessingTicket(processingTicket);
 
       console.log("tickets", filteredTickets);
     }
   }, [tickets, user]);
-
-  const handleTakeTurn = async () => {
-    if (user && user.service) {
-      const firstInQueueTicket = tickets
-        .filter(
-          (ticket) =>
-            ticket.status === "inQueue" && ticket.service === user.service.id
-        )
-        .sort((a, b) => a.createdAt - b.createdAt)[0];
-
-      if (firstInQueueTicket) {
-        await updateToProcessing(firstInQueueTicket.id, user, services);
-        setProcessingTicket(firstInQueueTicket);
-        fetchTickets();
-      }
-    }
-  };
-
-  const handleFinishTurn = async () => {
-    if (processingTicket) {
-      await updateToFinished(processingTicket.id, user);
-      setProcessingTicket(null);
-      fetchTickets();
-    }
-  };
-
-  const handleCancelTurn = async () => {
-    if (processingTicket) {
-      await updateToCancelled(processingTicket.id, user);
-      setProcessingTicket(null);
-      fetchTickets();
-    }
-  };
 
   return (
     <Box sx={styles.container}>
@@ -181,26 +195,26 @@ export const ActualTicket = () => {
       </Box>
       {processingTicket ? (
         <Box>
-          
           <Box sx={styles.ticketContainer}>
-          <Box>
-            <Typography sx={styles.ticketHeader}>Ticket#:</Typography>
-          </Box>
+            <Box>
+              <Typography sx={styles.ticketHeader}>Ticket#:</Typography>
+            </Box>
             <Typography sx={styles.ticketCode}>
               {processingTicket.ticketCode}
             </Typography>
             <Box>
-            <Typography sx={styles.ticketHeader}>Paciente:</Typography>
-            <Typography sx={styles.patientName}>{processingTicket.patientName}</Typography>
+              <Typography sx={styles.patientName}>
+                {processingTicket.patientName}
+              </Typography>
+            </Box>
           </Box>
-          </Box>
-          
+
           <Box sx={styles.btnContainer}>
-            <IconButton onClick={() => handleFinishTurn()}>
-              <CheckCircle size={50} />
+            <IconButton onClick={() => updateToFinished(processingTicket.id, user)}>
+              <CheckCircle size={75} />
             </IconButton>
-            <IconButton onClick={() => handleCancelTurn()}>
-              <XCircle size={50} />
+            <IconButton onClick={() => updateToCancelled(processingTicket.id, user)}>
+              <XCircle size={75} />
             </IconButton>
           </Box>
         </Box>
@@ -211,15 +225,15 @@ export const ActualTicket = () => {
             disabled={!enabledButton}
             variant="contained"
             size="large"
-            onClick={() => handleTakeTurn()}
+            onClick={() => handleTakeNext()}
           >
             ATENDER PACIENTE
           </Button>
           {enabledButton && (
-          <Typography sx={styles.helperText}>
-            Espera a que algún paciente facture
-          </Typography> ) 
-          }
+            <Typography sx={styles.helperText}>
+              Espera a que algún paciente facture
+            </Typography>
+          )}
         </Box>
       )}
     </Box>

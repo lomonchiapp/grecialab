@@ -7,49 +7,24 @@ import { useTheme } from "@mui/material/styles";
 import { EmptyQueue } from "../common/EmptyQueue";
 import { useBillingState } from "../../../hooks/global/useBillingState";
 import {
+  ArrowRight,
   DotsThreeOutlineVertical,
   HandCoins,
   PersonSimpleWalk,
   XCircle,
 } from "@phosphor-icons/react";
 import {
-  updateToBilled,
-  updateToBilling,
+  updateToProcessing,
+  updateToCancelled,
 } from "../../../hooks/tickets/updateTicket";
 import { ArrowBack } from "@mui/icons-material";
 import { ArrowForward } from "@mui/icons-material";
 
-export const PendingList = ({canBill}) => {
-  //Global States
-  const { user } = useUserState();
-  const { tickets, services } = useGlobalState();
-  //Local State
-  const [selectedServices, setSelectedServices] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [ticketsPerPage, setTicketsPerPage] = useState(5);
-  const initialTickets = tickets.filter(
-    (ticket) => ticket.status === "pending"
-  );
-  //Variables
-  const sortTickets = initialTickets.sort(
-    (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-  );
-  const filteredTickets =
-    selectedServices.length > 0
-      ? sortTickets.filter((ticket) =>
-          selectedServices.includes(ticket.service)
-        )
-      : sortTickets;
-  const indexOfLastTicket = currentPage * ticketsPerPage;
-  const indexOfFirstTicket = indexOfLastTicket - ticketsPerPage;
-  const currentTickets = filteredTickets.slice(
-    indexOfFirstTicket,
-    indexOfLastTicket
-  );
-  const totalPages = Math.ceil(sortTickets.length / ticketsPerPage);
+export const PendingList = () => {
+
+  // Styles
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-
   const styles = {
     waitingList: {
       backgroundColor: colors.primary[400],
@@ -92,22 +67,48 @@ export const PendingList = ({canBill}) => {
       fontFamily: "monospace",
     },
   };
+  //Global States
+  const { user } = useUserState();
+  const { tickets, services } = useGlobalState();
+
+  const initialTickets = tickets.filter((ticket) => ticket.status === "inQueue");
+  const sortTickets = initialTickets.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+  //Local States
+  const [selectedServices, setSelectedServices] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [ticketsPerPage, setTicketsPerPage] = useState(5);
+  const filteredTickets = selectedServices.length > 0
+      ? sortTickets.filter((ticket) => selectedServices.includes(ticket.service))
+      : sortTickets;
+  const indexOfLastTicket = currentPage * ticketsPerPage;
+  const indexOfFirstTicket = indexOfLastTicket - ticketsPerPage;
+  const currentTickets = filteredTickets.slice(
+    indexOfFirstTicket,
+    indexOfLastTicket
+  );
+  const totalPages = Math.ceil(filteredTickets.length / ticketsPerPage);
+
+  const serviceName = (serviceId) => {
+    const service = services.find((service) => service.id === serviceId);
+    return service.name;
+  }
+
   //Cambio de pagina
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const uniqueServices = [...new Set(services.map((service) => service.id))];
-  const serviceName = (serviceId) => {
-    const service = services.find((service) => service.id === serviceId);
-    return service.name;
-  };
+
   // Handle checkbox change
   const handleCheckboxChange = (service) => {
-    setSelectedServices((prevSelected) =>
+    setSelectedServices(prevSelected =>
       prevSelected.includes(service)
-        ? prevSelected.filter((s) => s !== service)
+        ? prevSelected.filter(s => s !== service)
         : [...prevSelected, service]
     );
   };
+
+
   return (
     <Box sx={styles.waitingList}>
       <Box sx={styles.headerContainer}>
@@ -149,16 +150,16 @@ export const PendingList = ({canBill}) => {
             </Box>
             <Box>
               <IconButton
-                disabled={canBill}
-                onClick={() => updateToBilling(ticket.id, user)}
+                disabled={ticket.status === "inQueue" ? false : true}
+                onClick={() => updateToProcessing(ticket.id, user, services)}
               >
-                <HandCoins />
+                <ArrowRight />
               </IconButton>
               <IconButton
-                disabled={canBill}
+                disabled={ticket.status === "inQueue" ? false : true}
                 onClick={
                   () =>
-                    updateToBCancelled(
+                    updateToCancelled(
                       ticket.id,
                       user
                     ) /*BCancelled = Billed Cancelled */

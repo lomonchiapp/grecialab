@@ -6,18 +6,24 @@ import { getUsers } from "../users/getUsers";
 import { getTickets } from "../tickets/getTickets";
 import { database } from "../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
+import { getVideos } from "../videos/getVideos";
+import { getBillingPositions } from "../billing/getBillingPositions";
 
 export const useGlobalState = create((set) => ({
   patients: [],
   services: [],
   selectedService: null,
   queues: [],
+  billingPositions: [],
+  videos: [],
   selectedQueue: null,
   users: [],
   tickets: [],
   selectedTicket: null,
+  setVideos: (videos) => set({ videos }),
   setPatients: (patients) => set({ patients }),
   setServices: (services) => set({ services }),
+  setBillingPositions: (billingPositions) => set({ billingPositions }),
   setSelectedService: (selectedService) => set({ selectedService }),
   setTickets: (tickets) => set({ tickets }),
   setSelectedTicket: (selectedTicket) => set({ selectedTicket }),
@@ -45,6 +51,14 @@ export const useGlobalState = create((set) => ({
   fetchTickets: async () => {
     const tickets = await getTickets();
     set({ tickets });
+  },
+  fetchVideos: async () => {
+    const videos = await getVideos();
+    set({ videos });
+  },
+  fetchBillingPositions: async () => {
+    const billingPositions = await getBillingPositions();
+    set({ billingPositions });
   },
   // Firestore Subscription
   subscribeToTickets: () => {

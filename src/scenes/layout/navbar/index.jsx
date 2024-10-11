@@ -60,6 +60,7 @@ const Navbar = () => {
         console.log("Logged out successfully");
         navigate("/login");
         handleMenuClose();
+        window.location.reload();
       })
       .catch((error) => {
         console.error("Error logging out", error);

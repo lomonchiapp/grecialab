@@ -15,13 +15,17 @@ import {
 import { Check, CheckCircle, XCircle } from "@phosphor-icons/react";
 import { useBillingState } from "../../../../hooks/global/useBillingState";
 
-export const BillingList = () => {
-  const { tickets, subscribeToTickets } = useGlobalState();
+export const BillingPosition = ({ canBill, setCanBill }) => {
+  const { tickets, subscribeToTickets, services } = useGlobalState();
   const { user } = useUserState();
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [enabledButton, setEnabledButton] = useState(false);
-  const [billingTickets, setBillingTickets] = useState([]);
+  const billingTicket = tickets.find(
+    (ticket) =>
+      ticket.status === "billing" &&
+      ticket.billingPosition?.id === user?.billingPosition?.id
+  );
 
   const handleBilling = async (ticketId) => {
     await updateToBilled(ticketId, user);
@@ -29,12 +33,12 @@ export const BillingList = () => {
 
   const handleBCancel = async (ticketId) => {
     await updateToBCancelled(ticketId, user);
-
   };
 
   const handleTakeTurn = async () => {
-    const nextTicket = tickets.filter((ticket) => ticket.status === "pending").
-      sort((a, b) => a.createdAt - b.createdAt)[0];
+    const nextTicket = tickets
+      .filter((ticket) => ticket.status === "pending")
+      .sort((a, b) => b.createdAt - a.createdAt)[0];
     await updateToBilling(nextTicket.id, user);
   };
 
@@ -42,10 +46,19 @@ export const BillingList = () => {
     const unsubscribe = subscribeToTickets();
     return () => unsubscribe();
   }, [subscribeToTickets]);
- 
+
+  const serviceName = (serviceId) => {
+    const service = services.find((service) => service.id === serviceId);
+    return service.name;
+  };
+
   useEffect(() => {
-    setBillingTickets(tickets.filter((ticket) => ticket.status === 'billing'));
-  }, [tickets]);
+    if (billingTicket) {
+      setCanBill(true);
+    } else {
+      setCanBill(false)
+    }
+  }, [billingTicket]);
 
   const styles = {
     container: {
@@ -67,6 +80,7 @@ export const BillingList = () => {
     ticketContainer: {
       padding: "10px",
       display: "flex",
+      justifyContent: "center",
       flexDirection: "row",
       backgroundColor: colors.gray[500],
       borderRadius: "5px",
@@ -75,7 +89,7 @@ export const BillingList = () => {
       color: colors.primary[100],
       fontFamily: "monospace",
       textAlign: "center",
-      fontSize: "14px",
+      fontSize: "24px",
       fontWeight: "bold",
     },
     ticketHeader: {
@@ -99,12 +113,16 @@ export const BillingList = () => {
       display: "flex",
       justifyContent: "space-around",
       paddingTop: "10px",
+      mt: 3,
+      borderRadius: "25px",
+      border: `1px solid ${colors.gray[700]}`,
     },
     patientContainer: {
       padding: "10px",
       mt: "10px",
       border: `1px solid ${colors.primary[400]}`,
       borderRadius: "5px",
+      backgroundColor: colors.gray[800],
     },
     patientName: {
       color: colors.primary[100],
@@ -138,34 +156,35 @@ export const BillingList = () => {
   return (
     <Box sx={styles.container}>
       <Box sx={styles.headerContainer}>
-        <Typography sx={styles.header}>Facturación</Typography>
+        <Typography sx={styles.header}>
+          Puesto de Facturación ({user?.billingPosition?.name})
+        </Typography>
       </Box>
-      {billingTickets.length > 0 ? (
-        billingTickets.map((ticket) => (
-          <Box sx={styles.ticket} key={ticket.id}>
-            <Box>
-              <Box>
-                <Typography sx={styles.ticketHeader}>
-                  {ticket.ticketCode}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography sx={styles.ticketHeader}>
-                  {ticket.patientName}
-                </Typography>
-              </Box>
-            </Box>
-
-            <Box sx={styles.btnContainer}>
-              <IconButton onClick={() => handleBilling(ticket.id)}>
-                <CheckCircle size={50} />
-              </IconButton>
-              <IconButton onClick={() => handleBCancel(ticket.id)}>
-                <XCircle size={50} />
-              </IconButton>
-            </Box>
+      {billingTicket ? (
+        <Box sx={styles.patientContainer}>
+          <Box sx={styles.ticketContainer}>
+            <Typography sx={styles.ticketCode}>
+              {billingTicket.ticketCode}
+            </Typography>
           </Box>
-        ))
+          <Typography sx={styles.patientLabel}>Paciente:</Typography>
+          <Typography sx={styles.patientName}>
+            {billingTicket.patientName}
+          </Typography>
+          <Typography sx={styles.patientLabel}>Servicio:</Typography>
+          <Typography sx={styles.patientName}>
+            {serviceName(billingTicket.service)}
+          </Typography>
+
+          <Box sx={styles.btnContainer}>
+            <IconButton onClick={() => handleBCancel(billingTicket.id)}>
+              <XCircle size={70} />
+            </IconButton>
+            <IconButton onClick={() => handleBilling(billingTicket.id)}>
+              <CheckCircle size={70} />
+            </IconButton>
+          </Box>
+        </Box>
       ) : (
         <Box sx={styles.idleBox}>
           <Typography sx={styles.idleText}>Puesto Libre</Typography>

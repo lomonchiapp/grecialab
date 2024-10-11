@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   FormControl,
@@ -13,7 +13,9 @@ import { useGlobalState } from "../../hooks/global/useGlobalState";
 import { useTheme } from "@mui/material";
 import { tokens } from "../../theme";
 import { newTicket } from "../../hooks/tickets/newTicket";
-import axios from "axios";
+import { TicketView } from "./TicketView";
+import html2canvas from 'html2canvas';
+
 
 export const NewTicket = ({ setOpen }) => {
   const { services, selectedQueue, setSelectedQueue, fetchQueues, queues, tickets } = useGlobalState();
@@ -42,6 +44,17 @@ export const NewTicket = ({ setOpen }) => {
       borderRadius: "5px",
       margin: "20px 0",
     },
+    dialog: {
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: "20px",
+      border: `1px solid ${colors.primary[400]}`,
+      backgroundColor: colors.gray[900],
+      borderRadius: "5px",
+      margin: "20px 0",
+    },
   };
 
   const [ticket, setTicket] = useState({
@@ -52,7 +65,40 @@ export const NewTicket = ({ setOpen }) => {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });
+  const ticketRef = useRef();
 
+  const handlePrint = async () => {
+    if (ticketRef.current) {
+      const canvas = await html2canvas(ticketRef.current);
+      const imgData = canvas.toDataURL('image/jpeg').split(',')[1]; // Get base64 string without the prefix
+
+      // Create the payload
+      const payload = {
+        imagePath: `data:image/jpeg;base64,${imgData}`, // Send the base64 string directly
+        imageWidth: 500,
+        imageHeight: 800,
+      };
+
+      // Send the image to the print server
+      try {
+        const response = await fetch('http://localhost:3000/print', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (response.ok) {
+          console.log('Image sent to print server successfully');
+        } else {
+          console.error('Failed to send image to print server');
+        }
+      } catch (error) {
+        console.error('Error sending image to print server:', error);
+      }
+    }
+  };
   // Update ticketCode once generatedTicket is available
   useEffect(() => {
     if (generatedTicket) {
@@ -74,40 +120,6 @@ export const NewTicket = ({ setOpen }) => {
     console.log("Selected Service:", correspondingService);
   }
 
-  const handlePrint = async () => {
-    try {
-      const serviceName = services.find((service) => service.id === ticket.service);
-      const createdAt = new Date(ticket.createdAt);
-  
-      const formattedDate = createdAt.toLocaleDateString('en-GB'); // Format date as DD/MM/YYYY
-      const formattedTime = createdAt.toLocaleTimeString('en-GB'); // Format time as HH:MM:SS
-  
-      const payload = {
-        patientName: ticket.patientName,
-        service: serviceName.name,
-        ticketCode: ticket.ticketCode,
-        pplBefore: pendingTickets.length,
-        date: formattedDate,
-        time: formattedTime,
-      };
-      console.log('Payload:', payload); // Log the payload to verify its structure
-  
-      const response = await fetch('http://localhost:3000/print', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-  
-      if (response.ok) {
-        const responseData = await response.json();
-        console.log('Text sent successfully:', responseData);
-      } else {
-        console.error('Error sending text:', response.statusText);
-      }
-    } catch (error) {
-      console.error('Error sending text:', error);
-    }
-  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -117,6 +129,7 @@ export const NewTicket = ({ setOpen }) => {
   };
 
   return (
+    <Box sx={styles.dialog}>
     <Box>
       <Typography variant="h4">Nuevo Ticket</Typography>
       <FormControl fullWidth>
@@ -133,6 +146,7 @@ export const NewTicket = ({ setOpen }) => {
           label="Servicio"
           variant="outlined"
           margin="normal"
+          required
           value={ticket.service || ''}
           onChange={handleServiceChange}
         >
@@ -156,6 +170,10 @@ export const NewTicket = ({ setOpen }) => {
           Crear
         </Button>
       </FormControl>
+    </Box>
+    <Box ref={ticketRef}>
+        <TicketView payload={ticket} />
+    </Box>
     </Box>
   );
 };

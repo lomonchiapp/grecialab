@@ -5,25 +5,26 @@ import { useUserState } from "../../../hooks/global/useUserState";
 import { tokens } from "../../../theme";
 import { useTheme } from "@mui/material/styles";
 
-export const TotalTickets = () => {
+export const BilledTickets = () => {
   const { tickets } = useGlobalState();
   const { user } = useUserState();
   const now = new Date();
   const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-  const totalTickets = tickets.filter((ticket) => {
-    const finishedAtDate = ticket?.updatedAt; // Convert Firestore timestamp to Date
+  const finishedTickets = tickets.filter((ticket) => {
+    const finishedAtDate = ticket.billedAt?.toDate(); // Convert Firestore timestamp to Date
     return (
-      ticket.service === user?.service.id &&
+      ticket.billedAt == true &&
       finishedAtDate >= twentyFourHoursAgo &&
       finishedAtDate <= now
     );
   });
 
+
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const styles = {
-    finishedTickets: {
+    cardContainer: {
       backgroundColor: colors.primary[400],
       padding: "15px",
       borderRadius: "5px",
@@ -61,12 +62,12 @@ export const TotalTickets = () => {
   };
 
   return (
-    <Card sx={styles.finishedTickets}>
+    <Card sx={styles.cardContainer}>
       <Box sx={styles.headerContainer}>
-        <Typography sx={styles.header}>Tickets Generados</Typography>
+        <Typography sx={styles.header}>Tickets Finalizados</Typography>
       </Box>
       <Box sx={styles.qtyContainer}>
-        <Typography sx={styles.qty}>{totalTickets.length}</Typography>
+        <Typography sx={styles.qty}>{finishedTickets.length}</Typography>
       </Box>
     </Card>
   );

@@ -23,7 +23,7 @@ import avatar from "../../../assets/images/icon.png";
 import logo from "../../../assets/images/logo-dark.png";
 import Item from "./Item";
 import { ToggledContext } from "../../../App";
-import { Ticket, Users } from "@phosphor-icons/react";
+import { Screencast, Ticket, Users } from "@phosphor-icons/react";
 import { Key } from "@mui/icons-material";
 import { UsersFour } from "@phosphor-icons/react/dist/ssr";
 import { useAuth } from "../../../hooks/context/AuthProvider";
@@ -201,12 +201,26 @@ const SideBar = () => {
           }}
         >
           {role === "admin" && (
+            <>
             <Item
               title="Accesos"
               path="/users"
               colors={colors}
               icon={<UsersFour />}
             />
+            <Item
+              title="Pantalla"
+              path="/screenpage"
+              colors={colors}
+              icon={<Screencast />}
+            />
+            <Item
+              title="Facturación"
+              path="/billing"
+              colors={colors}
+              icon={<ReceiptOutlined />}
+            />
+            </>
           )}
         </Menu>
       </Box>
