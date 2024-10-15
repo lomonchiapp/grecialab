@@ -75,8 +75,8 @@ export const NewTicket = ({ setOpen }) => {
       // Create the payload
       const payload = {
         imagePath: `data:image/jpeg;base64,${imgData}`, // Send the base64 string directly
-        imageWidth: 500,
-        imageHeight: 800,
+        imageWidth: 400,
+        imageHeight: 1000,
       };
 
       // Send the image to the print server
