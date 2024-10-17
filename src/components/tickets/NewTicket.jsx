@@ -81,7 +81,7 @@ export const NewTicket = ({ setOpen }) => {
 
       // Send the image to the print server
       try {
-        const response = await fetch('https://rndnj-181-36-66-5.a.free.pinggy.link/print', {
+        const response = await fetch('https://rnhra-181-36-66-5.a.free.pinggy.link/print', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -1,6 +1,6 @@
 export async function sendTextToSpeech(text) {
   try {
-    const response = await fetch('https://rndnj-181-36-66-5.a.free.pinggy.link/speak', {
+    const response = await fetch('https://rnhra-181-36-66-5.a.free.pinggy.link/speak', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
