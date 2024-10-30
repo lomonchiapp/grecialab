@@ -6,14 +6,14 @@ import {
 } from "react-router-dom";
 import { Dashboard, Navbar, SideBar } from "./scenes";
 import { ProtectedRoute } from "./scenes/ProtectedRoute";
-import { Login } from "./scenes/Login/index.jsx";
+import { Login } from "./scenes/login";
 import { Services } from "./scenes/services";
 import { Tickets } from "./scenes/tickets";
 import { Queues } from "./scenes/queues";
 import { Billing } from "./scenes/billing";
 import { Users } from "./scenes/users";
-import { NotAllowed } from "./scenes/notAllowed";
-import { ScreenPage } from "./scenes/screenpage";
+import { NotAllowed } from "./scenes/NotAllowed";
+import { ScreenPage } from "./scenes/ScreenPage";
 import App from "./App";
 
 export const AppRouter = () => {

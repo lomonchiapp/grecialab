@@ -15,7 +15,7 @@ import { DataGrid, GridToolbar } from "@mui/x-data-grid";
 import { tokens } from "../../theme";
 import { NewDialog } from "../../components/NewDialog";
 import { useGlobalState } from "../../hooks/global/useGlobalState";
-import { NewTicket } from "../../components/tickets/NewTIcket";
+import { NewTicket } from "../../components/tickets/NewTicket";
 import { database } from "../../firebase";
 import { onSnapshot, collection, getDocs } from "firebase/firestore";
 import { Delete } from "@mui/icons-material";

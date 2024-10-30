@@ -1,6 +1,6 @@
 export async function sendTextToSpeech(text) {
   try {
-    const response = await fetch('http://localhost:3000/speak', {
+    const response = await fetch(' http://172.20.10.5:3000/speak', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
