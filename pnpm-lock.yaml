@@ -89,6 +89,9 @@ importers:
       html2canvas:
         specifier: ^1.4.1
         version: 1.4.1
+      ip:
+        specifier: ^2.0.1
+        version: 2.0.1
       phosphor-icons:
         specifier: ^1.4.2
         version: 1.4.2
@@ -1771,6 +1774,9 @@ packages:
 
   iota-array@1.0.0:
     resolution: {integrity: sha512-pZ2xT+LOHckCatGQ3DcG/a+QuEqvoxqkiL7tvE8nn3uuu+f6i1TtpB5/FtWFbxUuVr5PZCx8KskuGatbJDXOWA==}
+
+  ip@2.0.1:
+    resolution: {integrity: sha512-lJUL9imLTNi1ZfXT+DU6rBBdbiKGBuay9B6xGSPVjUeQwaH1RIGqef8RZkUtHioLmSNpPR5M4HVKJGm1j8FWVQ==}
 
   is-array-buffer@3.0.4:
     resolution: {integrity: sha512-wcjaerHw0ydZwfhiKbXJWLDY8A7yV7KhjQOpb83hGgGfId/aQa4TOvwyzn2PuswW2gPCYEL/nEAiSVpdOj1lXw==}
@@ -3832,6 +3838,7 @@ snapshots:
       firebase: 10.13.2
       formik: 2.4.6(react@18.3.1)
       html-to-image: 1.11.11
+      html2canvas: 1.4.1
       phosphor-icons: 1.4.2
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
@@ -4692,6 +4699,8 @@ snapshots:
   internmap@1.0.1: {}
 
   iota-array@1.0.0: {}
+
+  ip@2.0.1: {}
 
   is-array-buffer@3.0.4:
     dependencies:

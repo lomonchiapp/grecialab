@@ -31,16 +31,9 @@ export const Login = () => {
     setError('');
 
     try {
-      const userRole = await getUserRole(email);
-      if (!userRole) {
-        setError('No role found for this email');
-        return;
-      }
-      setRole(userRole);
 
       // Proceed with authentication
       await signInWithEmailAndPassword(FIREBASE_AUTH, email, password);
-      console.log('User logged in with role:', userRole);
       navigate('/dashboard');
     } catch (error) {
       console.error('Error logging in:', error);

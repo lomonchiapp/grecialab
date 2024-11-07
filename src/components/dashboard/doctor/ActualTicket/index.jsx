@@ -14,7 +14,7 @@ import {
 } from "../../../../hooks/tickets/updateTicket";
 import { Check, CheckCircle, XCircle } from "@phosphor-icons/react";
 
-export const ActualTicket = () => {
+export const ActualTicket = ({filteredTickets}) => {
   const { tickets, fetchTickets, services } = useGlobalState();
   const { user } = useUserState();
   const [processingTicket, setProcessingTicket] = useState(null);
@@ -23,22 +23,13 @@ export const ActualTicket = () => {
   const [enabledButton, setEnabledButton] = useState(false);
 
   useEffect(() => {
-    console.log("Tickets:", tickets);
-    console.log("User:", user);
 
-    const filteredTickets = tickets.filter(
-      (ticket) => {
-        console.log("Ticket Status:", ticket.status);
-        return ticket.status === "inQueue" && ticket.service === user?.service.id;
-      }
-    );
-
-    if (filteredTickets.length > 0) {
+    if (filteredTickets.length >= 1) {
       setEnabledButton(true);
     } else {
       setEnabledButton(false);
     }
-  }, [tickets, user]);
+  }, [filteredTickets, user]);
 
   const styles = {
     container: {
@@ -128,33 +119,42 @@ export const ActualTicket = () => {
   };
 
   useEffect(() => {
-    if (user && user.service) {
-      const filteredTickets = tickets.filter(
-        (ticket) => ticket.service === user.service.id
+    if (user && user.services) {
+      const processingTicket = tickets.find(
+        (ticket) =>
+          ticket.status === "processing" &&
+          ticket.user.authId === user.authId &&
+          ticket.services.some((service) =>
+            user.services.some((userService) => userService.id === service.id)
+          )
       );
-      const processingTicket = filteredTickets.find(
-        (ticket) => ticket.status === "processing" 
-      );
+
       setProcessingTicket(processingTicket);
 
-      console.log("tickets", filteredTickets);
+      console.log("Processing Ticket:", processingTicket);
     }
   }, [tickets, user]);
 
-  const handleTakeTurn = async () => {
-    if (user && user.service) {
-      const firstInQueueTicket = tickets
-        .filter(
-          (ticket) =>
-            ticket.status === "inQueue" && ticket.service === user.service.id
-        )
-        .sort((a, b) => a.createdAt - b.createdAt)[0];
-
-      if (firstInQueueTicket) {
-        await updateToProcessing(firstInQueueTicket.id, user, services);
-        setProcessingTicket(firstInQueueTicket);
-        fetchTickets();
+const handleTakeTurn = () => {
+    const filteredTickets = tickets.filter(
+      (ticket) => {
+        return (
+          ticket.status === "inQueue" &&
+          ticket.services.some((service) =>
+            user?.services?.some((userService) => userService.id === service.id)
+          )
+        );
       }
+    );
+
+    if (filteredTickets.length > 0) {
+      const ticketToProcess = filteredTickets[0];
+      setProcessingTicket(ticketToProcess);
+      // Update the ticket status to "processing" or any other logic you need
+      updateToProcessing(ticketToProcess.id, user, services);
+      console.log("Processing Ticket:", ticketToProcess);
+    } else {
+      console.log("No tickets available for processing");
     }
   };
 

@@ -15,12 +15,11 @@ export const FinishedTickets = () => {
     const finishedAtDate = ticket.finishedAt?.toDate(); // Convert Firestore timestamp to Date
     return (
       ticket.status === "finished" &&
-      ticket.service === user?.service.id &&
-      finishedAtDate >= twentyFourHoursAgo &&
-      finishedAtDate <= now
+      ticket.services.some((service) =>
+        user?.services?.some((userService) => userService.id === service.id)
+      ) && finishedAtDate > twentyFourHoursAgo
     );
   });
-
 
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);

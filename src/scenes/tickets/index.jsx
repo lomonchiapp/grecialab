@@ -27,7 +27,6 @@ export const Tickets = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
-
   const styles = {
     page: {
       padding: "40px",
@@ -42,7 +41,16 @@ export const Tickets = () => {
       mb: 3,
     },
   };
-
+  const statusLabels = {
+    pending: "Esperando a facturar",
+    billing: "Facturando",
+    billed: "Facturado",
+    processing: "Siendo atendido",
+    inQueue: "En Fila",
+    bCancelled: "Cancelado en Facturación",
+    cancelled: "Cancelado",
+    finished: "Finalizado",
+  };
   useEffect(() => {
     const unsuscribe = subscribeToTickets();
     return () => unsuscribe();
@@ -83,12 +91,12 @@ export const Tickets = () => {
           columns={[
             { field: "patientName", headerName: "Nombre", width: 150 },
             {
-              field: "service",
-              headerName: "Servicio",
+              field: "services",
+              headerName: "Servicios",
               width: 150,
               valueGetter: (params) => {
-                const service = params.row.service;
-                return service.name;
+                const services = params.row.services;
+                return services?.map((service) => service.name).join(", ");
               },
             },
             { field: "ticketCode", headerName: "Fila / Turno", width: 150 },
@@ -126,15 +134,34 @@ export const Tickets = () => {
                 return `${formattedHours}:${formattedMinutes}:${formattedSeconds} ${ampm}`;
               },
             },
-            { field: "status", headerName: "Estado", width: 150 },
-            { field: "actions", headerName: "Acciones", width: 150, renderCell: (params) => {
-              return (
-                <>
-                <Delete onClick={() => deleteTicket(params.id)} />
-                
-                </>
-              );
-            }
+            {
+              field: "status",
+              headerName: "Estado",
+              width: 150,
+              renderCell: (params) => {
+                return (
+                  <Typography
+                    style={{
+                      color: colors.primary[100],
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {statusLabels[params.value]}
+                  </Typography>
+                );
+              },
+            },
+            {
+              field: "actions",
+              headerName: "Acciones",
+              width: 150,
+              renderCell: (params) => {
+                return (
+                  <>
+                    <Delete onClick={() => deleteTicket(params.id)} />
+                  </>
+                );
+              },
             },
           ]}
           pageSize={5}

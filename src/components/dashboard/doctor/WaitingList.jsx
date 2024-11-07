@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Typography, Grid } from "@mui/material";
 import { useGlobalState } from "../../../hooks/global/useGlobalState";
 import { useUserState } from "../../../hooks/global/useUserState";
@@ -6,14 +6,9 @@ import { tokens } from "../../../theme";
 import { useTheme } from "@mui/material/styles";
 import { EmptyQueue } from "../common/EmptyQueue";
 
-export const WaitingList = () => {
-  const { tickets } = useGlobalState();
+export const WaitingList = ({filteredTickets}) => {
+
   const { user } = useUserState();
-  const filteredTickets = tickets.filter(
-    (ticket) =>
-      ticket.status === "inQueue" && ticket.service === user?.service.id
-  );
-  const sortTickets = filteredTickets.sort((a, b) => a.createdAt - b.createdAt);
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
@@ -28,7 +23,7 @@ export const WaitingList = () => {
       display: "flex",
       flexDirection: "row",
       alignItems: "center",
-      gap:1,
+      gap: 1,
       padding: "10px",
       margin: "10px",
       backgroundColor: colors.gray[900],
@@ -62,22 +57,22 @@ export const WaitingList = () => {
           Pacientes en espera ({filteredTickets.length})
         </Typography>
       </Box>
-      {sortTickets.length === 0 ? (
-  <Box sx={styles.emptyBox}>
-    <EmptyQueue />
-  </Box>
-) : (
-  sortTickets.map((ticket) => (
-    <Box sx={styles.ticket} key={ticket.id}>
-      <Box sx={styles.codeBox}>
-        <Typography variant="h6">{ticket.ticketCode}</Typography>
-      </Box>
-      <Box>
-        <Typography variant="body1">{ticket.patientName}</Typography>
-      </Box>
-    </Box>
-  ))
-)}
+      {filteredTickets.length === 0 ? (
+        <Box sx={styles.emptyBox}>
+          <EmptyQueue />
+        </Box>
+      ) : (
+        filteredTickets.map((ticket) => (
+          <Box sx={styles.ticket} key={ticket.id}>
+            <Box sx={styles.codeBox}>
+              <Typography variant="h6">{ticket.ticketCode}</Typography>
+            </Box>
+            <Box>
+              <Typography variant="body1">{ticket.patientName}</Typography>
+            </Box>
+          </Box>
+        ))
+      )}
     </Box>
   );
 };

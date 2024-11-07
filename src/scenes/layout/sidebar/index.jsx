@@ -34,13 +34,11 @@ const SideBar = () => {
   const { toggled, setToggled } = useContext(ToggledContext);
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const { role } = useAuth();
   const { user, fetchUser } = useUserState();
 
   useEffect(() => {
     fetchUser();
-  }, [fetchUser]);
-
+  }, []);
   return (
     <Sidebar
       backgroundColor={colors.primary[400]}
@@ -200,7 +198,7 @@ const SideBar = () => {
             },
           }}
         >
-          {role === "admin" && (
+          {user?.role === "admin" && (
             <>
             <Item
               title="Accesos"

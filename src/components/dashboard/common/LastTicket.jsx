@@ -4,26 +4,29 @@ import { Box, Typography } from "@mui/material";
 import { useGlobalState } from "../../../hooks/global/useGlobalState";
 import { useUserState } from "../../../hooks/global/useUserState";
 
-
 export const LastTicket = () => {
   const { tickets } = useGlobalState();
   const { user } = useUserState();
   const now = new Date();
   const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-  const finishedTickets = tickets
+  const updatedTickets = tickets
     .filter((ticket) => {
-      const finishedAtDate = ticket.finishedAt?.toDate(); // Convert Firestore timestamp to Date
+      const updatedAtDate = ticket.updatedAt?.toDate
+        ? ticket.updatedAt.toDate()
+        : null;
       return (
-        ticket.status === "finished" &&
-        ticket.service === user?.service.id &&
-        finishedAtDate >= twentyFourHoursAgo &&
-        finishedAtDate <= now
+        ticket.services.some((service) =>
+          user?.services?.some((userService) => userService.id === service.id)
+        ) &&
+        updatedAtDate >= twentyFourHoursAgo &&
+        updatedAtDate <= now
       );
     })
-    .sort((a, b) => b.finishedAt.toDate() - a.finishedAt.toDate()); // Sort by finishedAt in descending order
+    .sort((a, b) => b.updatedAt?.toDate() - a.updatedAt?.toDate()); // Sort by updatedAt in descending order
 
-  const latestTicket = finishedTickets[0]; // Get the latest ticket
+  const latestTicket = updatedTickets[0]; // Get the latest ticket
+
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const styles = {
@@ -59,19 +62,22 @@ export const LastTicket = () => {
       color: colors.gray[100],
       fontSize: "14px",
       fontFamily: "monospace",
-    }
+    },
   };
   return (
     <Box style={styles.finishedTickets}>
       {latestTicket ? (
         <Box>
           <Box style={styles.headerContainer}>
-          
-          <Typography sx={styles.header}>Último Ticket</Typography>
+            <Typography sx={styles.header}>Último Ticket</Typography>
           </Box>
           <Box style={styles.ticket}>
-          <Typography sx={styles.ticketCode}>{latestTicket.ticketCode}</Typography>
-          <Typography sx={styles.patientName}>{latestTicket.patientName}</Typography>
+            <Typography sx={styles.ticketCode}>
+              {latestTicket.ticketCode}
+            </Typography>
+            <Typography sx={styles.patientName}>
+              {latestTicket.patientName}
+            </Typography>
           </Box>
         </Box>
       ) : (

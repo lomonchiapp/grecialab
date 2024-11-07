@@ -1,9 +1,12 @@
 import React from "react";
 import { Box, Typography, Grid } from "@mui/material";
+// Global States
 import { useGlobalState } from "../../hooks/global/useGlobalState";
-
+import { useNewTicketState } from "../../hooks/global/useNewTicketState";
 export const TicketView = ({ payload }) => {
+  
   const { tickets, services } = useGlobalState();
+  const { selectedServices } = useNewTicketState();
 
   const serviceById = (id) => {
     return services.find((service) => service.id === id);
@@ -24,7 +27,7 @@ export const TicketView = ({ payload }) => {
     minute: "2-digit",
   });
 
-  if(!payload.service) {
+  if(selectedServices.length === 0) {
     return null;
   }
 

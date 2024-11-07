@@ -47,11 +47,6 @@ export const BillingPosition = ({ canBill, setCanBill }) => {
     return () => unsubscribe();
   }, [subscribeToTickets]);
 
-  const serviceName = (serviceId) => {
-    const service = services.find((service) => service.id === serviceId);
-    return service.name;
-  };
-
   useEffect(() => {
     if (billingTicket) {
       setCanBill(true);
@@ -173,7 +168,7 @@ export const BillingPosition = ({ canBill, setCanBill }) => {
           </Typography>
           <Typography sx={styles.patientLabel}>Servicio:</Typography>
           <Typography sx={styles.patientName}>
-            {serviceName(billingTicket.service)}
+            {billingTicket.services.map((service) => service.name).join(", ")}
           </Typography>
 
           <Box sx={styles.btnContainer}>

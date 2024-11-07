@@ -9,6 +9,7 @@ import { ProtectedRoute } from "./scenes/ProtectedRoute";
 import { Login } from "./scenes/login";
 import { Services } from "./scenes/services";
 import { Tickets } from "./scenes/tickets";
+import { Install } from "./scenes/install";
 import { Queues } from "./scenes/queues";
 import { Billing } from "./scenes/billing";
 import { Users } from "./scenes/users";
@@ -21,6 +22,7 @@ export const AppRouter = () => {
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/install" element={<Install/>} />
         <Route path="unauthorized" element={<NotAllowed />} />
 
         <Route path="/" element={<App />}>

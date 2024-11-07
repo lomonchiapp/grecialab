@@ -12,11 +12,8 @@ export const TotalTickets = () => {
   const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
   const totalTickets = tickets.filter((ticket) => {
-    const finishedAtDate = ticket?.updatedAt; // Convert Firestore timestamp to Date
-    return (
-      ticket.service === user?.service.id &&
-      finishedAtDate >= twentyFourHoursAgo &&
-      finishedAtDate <= now
+    return ticket.services.some((service) =>
+      user?.services?.some((userService) => userService.id === service.id)
     );
   });
 

@@ -10,7 +10,9 @@ export const NewDialog = ({children, setOpen, open}) => {
     <Dialog
         open={open}
         onClose={handleClose}
-    >
+        maxWidth="md"
+        fullWidth
+>
         <DialogContent>
             {children}
         </DialogContent>

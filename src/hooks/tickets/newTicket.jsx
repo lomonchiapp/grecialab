@@ -1,23 +1,23 @@
 import {collection, addDoc, doc, updateDoc} from "firebase/firestore";
 import {database} from "../../firebase";
 import { toast } from "react-toastify";
-import { sendPrintJob, formatPrintData } from "./print/addPrintJob";
 
-export const newTicket = async (ticket, queue) => {
+export const newTicket = async (ticket, queues) => {
     try {
         const ticketRef = await addDoc(collection(database, 'tickets'), ticket);
         const newTicketData = { id: ticketRef.id, ...ticket }; // Ensure it returns the updated ticket
-        await updateDoc(doc(database, 'queues', queue.id), {
+    
+        // Iterate over each queue and update its count
+        for (const queue of queues) {
+          await updateDoc(doc(database, 'queues', queue.id), {
             ...queue,
-            count: queue.count + 1, 
-        });
+            count: queue.count + 1,
+          });
+        }
+    
         toast.success('Ticket creado');
         
         console.log('Ticket data before formatting:', ticket); // Log the ticket data
-        const printData = formatPrintData(ticket);
-        console.log('Formatted Print Data:', printData); // Log the print data
-       // sendPrintJob(printData);
-        sendPrintJob(printData);
         return newTicketData.id;
     } catch (error) {
         console.error('Error adding document: ', error);

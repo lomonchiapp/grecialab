@@ -1,27 +1,28 @@
-
-import { getDocs, collection, query, where } from 'firebase/firestore';
+import { getDocs, collection, query, where, doc, getDoc } from 'firebase/firestore';
 import { database, FIREBASE_AUTH } from '../../firebase';
 
 export const getUser = async () => {
-    try {
-        const user = FIREBASE_AUTH.currentUser;
+  const user = FIREBASE_AUTH.currentUser;
+  if (!user) {
+    throw new Error('No user is logged in');
+  }
 
-        if (!user) {
-            throw new Error('No user is logged in');
-        }
+  // Fetch user data from Firestore or any other source
+  const userData = await fetchUserDataByEmail(user.email);
+  return userData;
+};
 
-        const usersCollectionRef = collection(database, 'users');
-        const q = query(usersCollectionRef, where('email', '==', user.email));
-        const querySnapshot = await getDocs(q);
+const fetchUserDataByEmail = async (email) => {
+  // Implement your logic to fetch user data using the email
+  // For example, fetching from Firestore:
+  const q = query(collection(database, 'users'), where('email', '==', email));
+  const querySnapshot = await getDocs(q);
 
-        if (querySnapshot.empty) {
-            throw new Error('User document does not exist');
-        }
+  if (querySnapshot.empty) {
+    throw new Error('User data not found');
+  }
 
-        const userData = querySnapshot.docs[0].data();
-        return userData;
-    } catch (error) {
-        console.error('Error fetching user data:', error);
-        throw error;
-    }
+  // Assuming email is unique, we can take the first document
+  const userDoc = querySnapshot.docs[0];
+  return userDoc.data();
 };

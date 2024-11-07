@@ -12,6 +12,7 @@ import { Select, MenuItem } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import { roles } from "../../utils/roles/roles";
 import { useGlobalState } from "../../hooks/global/useGlobalState";
+import { ServiceSelection } from "./ServiceSelection";
 
 export const NewUser = ({ setOpen, refresh }) => {
   const { services, billingPositions } = useGlobalState();
@@ -20,7 +21,7 @@ export const NewUser = ({ setOpen, refresh }) => {
     email: "",
     password: "",
     role: "",
-    service: {},
+    services: [],
     billingPosition: {},
   });
 
@@ -80,21 +81,7 @@ export const NewUser = ({ setOpen, refresh }) => {
         <FormHelperText>Selecciona el rol del usuario a crear.</FormHelperText>
         {user.role == "doctor" && (
           <FormControl fullWidth>
-            <Select
-              sx={{ my: 2 }}
-              label="Servicio"
-              size="small"
-              variant="outlined"
-              margin="normal"
-              value={user.service}
-              onChange={(e) => setUser({ ...user, service: e.target.value })}
-            >
-              {services.map((service) => (
-                <MenuItem key={service.id} value={service}>
-                  {service.name}
-                </MenuItem>
-              ))}
-            </Select>
+            <ServiceSelection user={user} setUser={setUser} services={services}/>
             <FormHelperText>
               Selecciona el servicio al que pertenece el doctor.
             </FormHelperText>

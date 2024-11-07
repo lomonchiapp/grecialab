@@ -7,29 +7,36 @@ import { getTickets } from "../tickets/getTickets";
 import { database } from "../../firebase";
 import { collection, onSnapshot } from "firebase/firestore";
 import { getVideos } from "../videos/getVideos";
+import { getIP } from "../getIP";
 import { getBillingPositions } from "../billing/getBillingPositions";
 
 export const useGlobalState = create((set) => ({
+  serverIP: "",
   patients: [],
   services: [],
-  selectedService: null,
+  selectedServices: [],
   queues: [],
   billingPositions: [],
   videos: [],
-  selectedQueue: null,
+  selectedQueues: [],
   users: [],
   tickets: [],
   selectedTicket: null,
+  setServerIP: (serverIP) => set({ serverIP }),
   setVideos: (videos) => set({ videos }),
   setPatients: (patients) => set({ patients }),
   setServices: (services) => set({ services }),
   setBillingPositions: (billingPositions) => set({ billingPositions }),
-  setSelectedService: (selectedService) => set({ selectedService }),
+  setSelectedServices: (selectedServices) => set({ selectedServices }),
   setTickets: (tickets) => set({ tickets }),
   setSelectedTicket: (selectedTicket) => set({ selectedTicket }),
   setQueues: (queues) => set({ queues }),
-  setSelectedQueue: (selectedQueue) => set({ selectedQueue }),
+  setSelectedQueues: (selectedQueues) => set({ selectedQueues }),
   setUsers: (users) => set({ users }),
+  fetchIP: async () => {
+    const serverIP = await getIP();
+    set({ serverIP });
+  },
   fetchPatients: async () => {
     const patients = await getPatients();
     set({ patients });
@@ -38,11 +45,9 @@ export const useGlobalState = create((set) => ({
     const services = await getServices();
     set({ services });
   },
-  fetchQueues: () => {
-    const unsubscribe = getQueues((queues) => {
-      set({ queues });
-    });
-    return unsubscribe;
+  fetchQueues: async () => {
+    const queues = await getQueues();
+    set({ queues });
   },
   fetchUsers: async () => {
     const users = await getUsers();
@@ -74,8 +79,14 @@ export const useGlobalState = create((set) => ({
     return unsubscribe;
   },
   subscribeToQueues: () => {
-    const unsubscribe = getQueues((queues) => {
-      set({ queues });
+    const q = collection(database, "queues");
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      set({ queues: data });
+      console.log("Queues data:", data);
     });
     return unsubscribe;
   }

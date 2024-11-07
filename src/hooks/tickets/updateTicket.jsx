@@ -5,77 +5,6 @@ import { addNotification } from "../notifications/addNotification";
 import { useGlobalState } from "../global/useGlobalState";
 import { sendTextToSpeech } from "../../utils/speech/sendTextToSpeech";
 
-// Esta funcion es para pasar el turno de espera a un puesto de atención
-export const updateToProcessing = async (ticketId, user, services) => {
-  const ticketRef = doc(database, "tickets", ticketId);
-  const ticketSnap = await getDoc(ticketRef);
-
-  const serviceName = (serviceId) => {
-    if (!services) {
-      console.error("Services array is undefined");
-      return "Unknown Service";
-    }
-    const service = services.find((service) => service.id === serviceId);
-    return service ? service.name : "Unknown Service";
-  };
-
-  if (ticketSnap.exists()) {
-    await updateDoc(ticketRef, {
-      status: "processing",
-      user: user,
-      updatedAt: new Date(),
-    });
-    toast.success("Turno de paciente transferido a tu puesto.");
-    addNotification({
-      title: `Paciente a Puesto de ${serviceName(ticketSnap.data().service)}`,
-      message: `El paciente ${ticketSnap.data().patientName} con turno ${
-        ticketSnap.data().ticketCode
-      } esta siendo atendido en ${serviceName(ticketSnap.data().service)}.`,
-      user: user,
-      seen: false,
-      ticket: ticketId,
-      createdAt: new Date(),
-    });
-    const speechText = `${ticketSnap.data().patientName}, con turno, ${
-      ticketSnap.data().ticketCode
-    }, favor pasar al puesto de servicio ${serviceName(
-      ticketSnap.data().service
-    )}`;
-    sendTextToSpeech(speechText);
-  } else {
-    console.error("No such document!");
-  }
-};
-// Esta funcion es para dar el turno por terminado (final del ciclo de atención)
-export const updateToFinished = async (ticketId, user) => {
-  const ticketRef = doc(database, "tickets", ticketId);
-  const ticketSnap = await getDoc(ticketRef);
-
-  if (ticketSnap.exists()) {
-    await updateDoc(ticketRef, {
-      status: "finished",
-      user: user,
-      finishedAt: new Date(),
-      updatedAt: new Date(),
-    });
-    toast.success("Turno de paciente finalizado.");
-  }
-};
-// Esta funcion es para cancelar el turno desde el puesto de atención
-export const updateToCancelled = async (ticketId, user) => {
-  const ticketRef = doc(database, "tickets", ticketId);
-  const ticketSnap = await getDoc(ticketRef);
-
-  if (ticketSnap.exists()) {
-    await updateDoc(ticketRef, {
-      status: "cancelled",
-      user: user,
-      updatedAt: new Date(),
-      cancelledAt: new Date(),
-    });
-    toast.update("Turno de paciente cancelado.");
-  }
-};
 // Esta funcion es para pasar el turno de espera a facturación
 
 export const updateToBilling = async (ticketId, user) => {
@@ -95,19 +24,122 @@ export const updateToBilling = async (ticketId, user) => {
       billingAt: new Date(),
     });
     addNotification({
-        title: `Paciente a Puesto de Facturación ${user.billingPosition.name}`,
-        message: `El paciente ${ticketSnap.data().patientName} con turno ${
-          ticketSnap.data().ticketCode
-        } pase a ${user.billingPosition.name}.`,
-        user: user,
-        seen: false,
-        ticket: ticketId,
-        createdAt: new Date(),
-      });
+      title: `Paciente a Puesto de Facturación ${user.billingPosition.name}`,
+      message: `El paciente ${ticketSnap.data().patientName} con turno ${
+        ticketSnap.data().ticketCode
+      } pase a ${user.billingPosition.name}.`,
+      user: user,
+      billingPosition: user.billingPosition,  // Se agrega el puesto de facturación  
+      seen: false,
+      ticket: ticketId,
+      createdAt: new Date(),
+    });
     toast.success("Turno de paciente en facturación.");
     sendTextToSpeech(speechText);
   }
 };
+
+// Esta funcion es para pasar el turno de espera a un puesto de atención
+export const updateToProcessing = async (ticketId, user, services) => {
+  const ticketRef = doc(database, "tickets", ticketId);
+  const ticketSnap = await getDoc(ticketRef);
+
+  if (ticketSnap.exists()) {
+    const existingServices = ticketSnap.data().services;
+    const updatedServices = existingServices.map((existingService) => {
+      const serviceToUpdate = user.services.find(
+        (userService) => userService.id === existingService.id
+      );
+      if (serviceToUpdate) {
+        return { ...existingService, status: "processing" };
+      }
+      return existingService;
+    });
+
+
+    await updateDoc(ticketRef, {
+      services: updatedServices, // Se actualiza el estado de los servicios
+      status: "processing",
+      user: user,
+      updatedAt: new Date(),
+    });
+
+    const matchingService = user.services.find(userService =>
+      ticketSnap.data().services.some(service => service.id === userService.id)
+    );
+
+    toast.success("Turno de paciente transferido a tu puesto.");
+
+    // CREACION DE LA NOTIFICACION
+    addNotification({
+      title: `Paciente a Puesto de ${matchingService.name}`,
+      message: `El paciente ${ticketSnap.data().patientName} con turno ${
+        ticketSnap.data().ticketCode
+      } esta siendo atendido en ${matchingService.name}.`,
+      user: user,
+      service: matchingService,
+      seen: false,
+      ticketId: ticketId,
+      createdAt: new Date(),
+    });
+
+    //TEXTO A VOZ
+    const speechText = `${ticketSnap.data().patientName}, con turno, ${
+      ticketSnap.data().ticketCode
+    }, favor pasar al puesto de servicio ${
+      matchingService.name
+    }`;
+    sendTextToSpeech(speechText);
+  } else {
+    console.error("No such document!");
+  }
+};
+// Esta funcion es para dar el turno por terminado (final del ciclo de atención)
+export const updateToFinished = async (ticketId, user) => {
+  const ticketRef = doc(database, "tickets", ticketId);
+  const ticketSnap = await getDoc(ticketRef);
+
+  if (ticketSnap.exists()) {
+    const services = ticketSnap.data().services.map(service =>
+      user.services.some(userService => userService.id === service.id)
+        ? { ...service, status: "finished" }
+        : service
+    );
+
+    // Check if all services are finished
+    const allServicesFinished = services.every(service => service.status === "finished");
+    const matchingService = user.services.find(userService =>
+      ticketSnap.data().services.some(service => service.id === userService.id)
+    );
+    await updateDoc(ticketRef, {
+      services,
+      status: allServicesFinished ? "finished" : "inQueue",
+      user: user,
+      finishedAt: new Date(),
+      updatedAt: new Date(),
+    });
+    toast.success(`Turno de paciente para el servicio ${matchingService.name} finalizado.`);
+    if (allServicesFinished) {
+      toast.success("Turno de paciente finalizado completamente.");
+    }
+  }
+};
+// Esta funcion es para cancelar el turno desde el puesto de atención
+export const updateToCancelled = async (ticketId, user) => {
+  const ticketRef = doc(database, "tickets", ticketId);
+  const ticketSnap = await getDoc(ticketRef);
+
+  if (ticketSnap.exists()) {
+    await updateDoc(ticketRef, {
+      status: "cancelled",
+      user: user,
+      updatedAt: new Date(),
+      cancelledAt: new Date(),
+    });
+    toast.update("Turno de paciente cancelado.");
+  }
+};
+
 // Esta funcion es para cancelar el turno desde facturación
 
 export const updateToBCancelled = async (ticketId, user) => {

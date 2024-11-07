@@ -1,180 +1,110 @@
 import React, { useState, useEffect } from "react";
-import {
-  Box,
-  FormControl,
-  TextField,
-  Typography,
-  FormHelperText,
-  Button,
-  Switch,
-} from "@mui/material";
-import { getService } from "../../hooks/getService";
-import { getQueue } from "../../hooks/getQueue";
-import { deleteService } from "../../hooks/deleteService";
-import { editService } from "../../hooks/editService";
-import { useServiceState } from "../../hooks/global/useServiceState";
-import { useTheme } from "@mui/material";
+import { Box, Typography, TextField, Button, FormControl } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { tokens } from "../../theme";
-import { X } from "@phosphor-icons/react";
-import {
-  doc,
-  getDoc,
-  query,
-  where,
-  collection,
-  getDocs,
-} from "firebase/firestore";
+import { useParams } from "react-router-dom";
+import { useGlobalState } from "../../hooks/global/useGlobalState";
+import { ServiceSelection } from "./ServiceSelection";
+import {where, query, doc, getDoc, updateDoc} from "firebase/firestore";
+//Global State
+import { useEditState } from "../../hooks/global/useEditState";
+//Firebase
 import { database } from "../../firebase";
+//Toast
+import { toast } from "react-toastify";
 
-export const EditService = ({ setOpen, serviceId, queueId, refresh }) => {
+export const EditUser = () => {
+  const { services } = useGlobalState();
+  const {setUserToEdit, userToEdit, userEditMode, setUserEditMode} = useEditState();
+  const [localUser, setLocalUser] = useState(userToEdit);
+  const [errors, setErrors] = useState({});
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const [queue, setQueue] = useState({
-    name: "",
-    isActive: null,
-  });
-  const [mainQueue, setMainQueue] = useState(null);
-  const [service, setService] = useState({
-    name: "",
-    description: "",
-    isActive: null,
-  });
 
-  const getMainQueue = async () => {
-    const q = query(
-      collection(database, "queues"),
-      where("isMain", "==", true)
-    );
-    if (!q) {
-      setMainQueue(null);
-    } else {
-      const querySnapshot = await getDocs(q);
-      querySnapshot.forEach((doc) => {
-        setMainQueue(doc.data());
+  useEffect(() => {
+    setLocalUser(userToEdit);
+  }, [userToEdit]);
+
+  const validate = () => {
+    let tempErrors = {};
+    tempErrors.name = localUser.name ? "" : "This field is required.";
+    tempErrors.email = localUser.email ? "" : "This field is required.";
+    tempErrors.role = localUser.role ? "" : "This field is required.";
+    setErrors(tempErrors);
+    return Object.values(tempErrors).every(x => x === "");
+  };
+
+  const handleSave = async () => {
+    if (validate()) {
+      const userRef = doc(database, "users", localUser.id);
+      await updateDoc(userRef, {
+        name: localUser.name,
+        services: localUser.services,
       });
+      setUserEditMode(false);
+      toast.success("Usuario actualizado correctamente.");
+    } else {
+      alert("Favor no dejar campos en blanco.");
     }
   };
 
-  useEffect(() => {
-    console.log("serviceId:", serviceId);
-    console.log("queueId:", queueId);
-    getMainQueue();
-    getService(serviceId)
-      .then((data) => {
-        console.log("Service data:", data);
-        setService(data);
-      })
-      .catch((error) => {
-        console.error("Error fetching service:", error);
-      });
-
-    getQueue(queueId)
-      .then((data) => {
-        console.log("Queue data:", data);
-        setQueue(data);
-      })
-      .catch((error) => {
-        console.error("Error fetching queue:", error);
-      });
-  }, []);
-
-  const onDelete = (e) => {
-    e.preventDefault();
-    deleteService(service, queue);
-    refresh();
-    setOpen(false);
-  };
-
-  const onSubmit = (e) => {
-    e.preventDefault();
-    editService(service, queue);
-
-    setOpen(false);
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setLocalUser((prevUser) => ({
+      ...prevUser,
+      [name]: value,
+    }));
   };
 
   return (
     <Box>
-      <Box sx={{ display: "flex", flexDirection: "row", mb: 2 }}>
-        <Typography variant="h4" sx={{ mr: 1 }}>
-          Editar
-        </Typography>
-        <Typography variant="h4">{service.name}</Typography>
-      </Box>
-      <FormControl fullWidth>
+      <Typography variant="h4" gutterBottom>
+        Editar Usuario
+      </Typography>
+      <FormControl fullWidth margin="normal">
         <TextField
-          label="Nombre de Servicio"
-          variant="outlined"
+          label="Nombre"
+          name="name"
+          value={localUser.name}
+          onChange={handleChange}
+          fullWidth
           margin="normal"
-          value={service.name}
-          onChange={(e) => setService({ ...service, name: e.target.value })}
+          error={!!errors.name}
+          helperText={errors.name}
         />
         <TextField
-          label="Descripción"
-          variant="outlined"
+          label="Email"
+          name="email"
+          value={localUser.email}
+          disabled
+          fullWidth
           margin="normal"
-          multiline
-          rows={3}
-          value={service.description}
-          onChange={(e) =>
-            setService({ ...service, description: e.target.value })
-          }
+          error={!!errors.email}
+          helperText={errors.email}
         />
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "row",
-            justifyContent: "center",
-            py: 1,
-            mb: 2,
-            backgroundColor: colors.gray[500],
-            border: "1px solid",
-            borderColor: colors.gray[300],
-          }}
+        <TextField
+          label="Rol"
+          name="role"
+          value={localUser.role}
+          onChange={handleChange}
+          fullWidth
+          margin="normal"
+          error={!!errors.role}
+          helperText={errors.role}
+        />
+        <ServiceSelection
+          user={localUser}
+          setUser={setLocalUser}
+          services={services}
+        />
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleSave}
+          sx={{ mt: 2 }}
         >
-          {queue.isMain ? (
-            <Typography sx={{ fontSize: 10, maxWidth: "70%" }}>
-              Este servicio es la fila principal.
-            </Typography>
-          ) : null}
-          {mainQueue == null ? (
-            <>
-              <Typography sx={{ fontSize: 10, maxWidth: "70%" }}>
-                Configurar como servicio/fila principal.
-              </Typography>
-              <Switch
-                size="small"
-                value={queue.isMain}
-                checked={queue.isMain}
-                onChange={(e) => {
-                  setQueue({ ...queue, isMain: e.target.checked });
-                  setService((prevService) => ({
-                    ...prevService,
-                    isActive: !e.target.checked,
-                  }));
-                }}
-              />
-            </>
-          ) : null}
-        </Box>
-        <Box>
-          <Button
-            sx={{ mr: 2 }}
-            variant="contained"
-            color="primary"
-            onClick={onSubmit}
-          >
-            Guardar
-          </Button>
-          <Button
-            sx={{ cursor: "pointer" }}
-            variant="contained"
-            color="error"
-            onClick={onDelete}
-          >
-            <X />
-            Eliminar
-          </Button>
-        </Box>
+          Save
+        </Button>
       </FormControl>
     </Box>
   );

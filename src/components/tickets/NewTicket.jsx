@@ -1,28 +1,33 @@
+// React Imports
 import React, { useState, useEffect, useRef } from "react";
+// Mui Imports
 import {
-  Box,
-  FormControl,
-  TextField,
-  Typography,
-  MenuItem,
-  Button,
-  Select,
+  Box, FormControl,
+  TextField, Typography,
+  Button, CircularProgress
 } from "@mui/material";
-import { serverTimestamp } from "firebase/firestore";
+// Global States
 import { useGlobalState } from "../../hooks/global/useGlobalState";
+import { useNewTicketState } from "../../hooks/global/useNewTicketState";
+// Theme Imports
 import { useTheme } from "@mui/material";
 import { tokens } from "../../theme";
+// Hooks
 import { newTicket } from "../../hooks/tickets/newTicket";
+import { handlePrint } from "../../hooks/tickets/print/handlePrint";
+// Custom Components
 import { TicketView } from "./TicketView";
-import html2canvas from 'html2canvas';
+import { ServiceSelection } from "./ServiceSelection";
 
 
 export const NewTicket = ({ setOpen }) => {
-  const { services, selectedQueue, setSelectedQueue, fetchQueues, queues, tickets } = useGlobalState();
+  const { fetchQueues } = useGlobalState();
+  const {selectedServices, selectedQueues, reset } = useNewTicketState();
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [generatedTicket, setGeneratedTicket] = useState("");
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
-  const generatedTicket = `${selectedQueue?.name} - ${selectedQueue?.count?.toString().padStart(2, "0")}`;
-  const pendingTickets = tickets.filter((ticket) => ticket.status === "pending");
+  
   const styles = {
     tktTxtLbl: {
       fontSize: "1rem",
@@ -44,7 +49,7 @@ export const NewTicket = ({ setOpen }) => {
       borderRadius: "5px",
       margin: "20px 0",
     },
-    dialog: {
+    loadingBox: {
       display: "flex",
       flexDirection: "row",
       justifyContent: "center",
@@ -55,11 +60,41 @@ export const NewTicket = ({ setOpen }) => {
       borderRadius: "5px",
       margin: "20px 0",
     },
+    loadingText:{
+      color: colors.primary[100],
+      marginLeft: "10px",
+    },
+    circProgress: {
+      color: colors.primary[100],
+    },
+    dialog: {
+      display: "flex",
+      flexDirection: "row",
+      width: "100%",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: "20px",
+      border: `1px solid ${colors.primary[400]}`,
+      backgroundColor: colors.gray[900],
+      borderRadius: "5px",
+      margin: "20px 0",
+    },
   };
+
+    // Update generatedTicket whenever selectedServices or selectedQueues change
+    useEffect(() => {
+      if (selectedServices.length > 0) {
+        const count = selectedQueues[0]?.count || 0;
+        const formattedCount = count.toString().padStart(2, "0");
+        const ticketCode = `${selectedServices.map(service => service.name.slice(0, 1).toUpperCase()).join('')} - ${formattedCount}`;
+        setGeneratedTicket(ticketCode);
+      }
+    }, [selectedServices, selectedQueues]);
 
   const [ticket, setTicket] = useState({
     patientName: "",
-    service: "",
+    services: [],
+    queues:[],
     status: "pending", // 1 = pending
     ticketCode: generatedTicket,
     createdAt: new Date().toISOString(),
@@ -67,70 +102,49 @@ export const NewTicket = ({ setOpen }) => {
   });
   const ticketRef = useRef();
 
-  const handlePrint = async () => {
-    if (ticketRef.current) {
-      const canvas = await html2canvas(ticketRef.current);
-      const imgData = canvas.toDataURL('image/jpeg').split(',')[1]; // Get base64 string without the prefix
-
-      // Create the payload
-      const payload = {
-        imagePath: `data:image/jpeg;base64,${imgData}`, // Send the base64 string directly
-        imageWidth: 500,
-        imageHeight: 800,
-      };
-
-      // Send the image to the print server
-      try {
-        const response = await fetch('http://172.20.10.5:3000/print', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-
-        if (response.ok) {
-          console.log('Image sent to print server successfully');
-        } else {
-          console.error('Failed to send image to print server');
-        }
-      } catch (error) {
-        console.error('Error sending image to print server:', error);
-      }
-    }
-  };
+ 
   // Update ticketCode once generatedTicket is available
   useEffect(() => {
     if (generatedTicket) {
       setTicket(prevTicket => ({
         ...prevTicket,
         ticketCode: generatedTicket,
+        services: selectedServices.map(service => ({
+          id: service.id,
+          name: service.name,
+          status: "pending", // initial status for each service
+        })),
+        queues: selectedQueues.map(queue => (queue)),
       }));
     }
-  }, [generatedTicket]);
-
-  const handleServiceChange = (e) => {
-    const serviceId = e.target.value;
-    const correspondingService = services.find((service) => service.id === serviceId);
-    const correspondingQueue = queues.find((queue) => queue.serviceId == serviceId);
-    setTicket({ ...ticket, service: e.target.value });
-    setSelectedQueue(correspondingQueue);
-    console.log("queues availables:", queues);
-    console.log("Selected Queue:", correspondingQueue);
-    console.log("Selected Service:", correspondingService);
-  }
-
+  }, [generatedTicket, selectedServices]);
+ 
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    await newTicket(ticket, selectedQueue);
-    await handlePrint();
+    setIsPrinting(true);
+    await newTicket(ticket, selectedQueues);
+    await handlePrint(ticketRef);
+    setIsPrinting(false);
+    fetchQueues();
+    // Clean State
+    setTicket({
+      patientName: "",
+      services: [],
+      queues:[],
+      status: "pending", // 1 = pending
+      ticketCode: "",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    // Close Dialog
     setOpen(false);
+    reset();
   };
 
   return (
     <Box sx={styles.dialog}>
-    <Box>
+    <Box sx={{width:"50%"}}>
       <Typography variant="h4">Nuevo Ticket</Typography>
       <FormControl fullWidth>
         <TextField
@@ -142,38 +156,32 @@ export const NewTicket = ({ setOpen }) => {
             setTicket({ ...ticket, patientName: e.target.value })
           }
         />
-        <Select
-          label="Servicio"
-          variant="outlined"
-          margin="normal"
-          required
-          value={ticket.service || ''}
-          onChange={handleServiceChange}
-        >
-          {services.map((service, index) => (
-            <MenuItem key={index} value={service.id}>
-              {service.name}
-            </MenuItem>
-          ))}
-        </Select>
+        <ServiceSelection />
         <Box sx={styles.tktContainer}>
           <Typography sx={styles.tktTxtLbl}>Ticket #:</Typography>
-          {selectedQueue && <Typography sx={styles.ticketText}>{generatedTicket}</Typography>}
+          {selectedServices.length >= 1 && <Typography sx={styles.ticketText}>{generatedTicket}</Typography>}
         </Box>
-        <Button
+        {isPrinting ? (
+          <Box sx={styles.loadingBox}>
+          <CircularProgress size={24} sx={styles.circProgress} />
+          <Typography sx={styles.loadingText}>Imprimiendo.. Favor Espere...</Typography>
+          </Box>
+        )
+         : (<Button
           variant="contained"
           color="primary"
           size="large"
-          disabled={!selectedQueue}
+          disabled={!selectedQueues}
           onClick={onSubmit}
         >
           Crear
-        </Button>
+        </Button>)}
       </FormControl>
     </Box>
     <Box ref={ticketRef}>
         <TicketView payload={ticket} />
     </Box>
+
     </Box>
   );
 };

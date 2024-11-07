@@ -1,14 +1,9 @@
-import { collection, onSnapshot } from "firebase/firestore";
-import { database } from "../../firebase";
+import { getDocs, collection } from "firebase/firestore"
+import { database } from "../../firebase"
 
-export const getQueues = (callback) => {
-  const queuesCollection = collection(database, 'queues');
-  const unsubscribe = onSnapshot(queuesCollection, (snapshot) => {
-    const queuesList = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    callback(queuesList);
-  });
-  return unsubscribe;
-};
+export const getQueues = async () => {
+    const queuesCollection = collection(database, 'queues')
+    const queuesSnapshot = await getDocs(queuesCollection)
+    const queuesList = queuesSnapshot.docs.map(doc => doc.data())
+    return queuesList
+}
