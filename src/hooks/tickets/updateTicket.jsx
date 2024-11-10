@@ -95,29 +95,41 @@ export const updateToProcessing = async (ticketId, user, services) => {
   }
 };
 // Esta funcion es para dar el turno por terminado (final del ciclo de atención)
+// Esta funcion es para dar el turno por terminado (final del ciclo de atención)
 export const updateToFinished = async (ticketId, user) => {
   const ticketRef = doc(database, "tickets", ticketId);
   const ticketSnap = await getDoc(ticketRef);
 
   if (ticketSnap.exists()) {
-    const services = ticketSnap.data().services.map(service =>
-      user.services.some(userService => userService.id === service.id)
-        ? { ...service, status: "finished" }
-        : service
-    );
+    const existingServices = ticketSnap.data().services;
+
+    // Update the status of the matching service to "finished"
+    const updatedServices = existingServices.map((existingService) => {
+      const serviceToUpdate = user.services.find(
+        (userService) => userService.id === existingService.id
+      );
+      if (serviceToUpdate) {
+        return { ...existingService, status: "finished" };
+      }
+      return existingService;
+    });
 
     // Check if all services are finished
-    const allServicesFinished = services.every(service => service.status === "finished");
+    const allServicesFinished = updatedServices.every(service => service.status === "finished");
+
+    // Find the matching service from the user's services
     const matchingService = user.services.find(userService =>
-      ticketSnap.data().services.some(service => service.id === userService.id)
+      existingServices.some(service => service.id === userService.id)
     );
+
     await updateDoc(ticketRef, {
-      services,
+      services: updatedServices,
       status: allServicesFinished ? "finished" : "inQueue",
       user: user,
       finishedAt: new Date(),
       updatedAt: new Date(),
     });
+
     toast.success(`Turno de paciente para el servicio ${matchingService.name} finalizado.`);
     if (allServicesFinished) {
       toast.success("Turno de paciente finalizado completamente.");

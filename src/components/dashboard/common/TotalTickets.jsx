@@ -12,7 +12,7 @@ export const TotalTickets = () => {
   const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
   const totalTickets = tickets.filter((ticket) => {
-    return ticket.services.some((service) =>
+    return ticket.services?.some((service) =>
       user?.services?.some((userService) => userService.id === service.id)
     );
   });

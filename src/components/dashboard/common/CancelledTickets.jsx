@@ -14,7 +14,7 @@ export const CancelledTickets = () => {
   const cancelledTickets = tickets.filter((ticket) => {
     const finishedAtDate = ticket.cancelledAt?.toDate(); // Convert Firestore timestamp to Date
     return (
-      ticket.services.some((service) =>
+      ticket.services?.some((service) =>
         service.status === "cancelled" &&
         user?.services?.some((userService) => userService.id === service.id)
       ) && finishedAtDate > twentyFourHoursAgo

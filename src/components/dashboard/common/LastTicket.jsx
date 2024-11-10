@@ -16,7 +16,7 @@ export const LastTicket = () => {
         ? ticket.updatedAt.toDate()
         : null;
       return (
-        ticket.services.some((service) =>
+        ticket.services?.some((service) =>
           user?.services?.some((userService) => userService.id === service.id)
         ) &&
         updatedAtDate >= twentyFourHoursAgo &&

@@ -8,7 +8,6 @@ import { EmptyQueue } from "../common/EmptyQueue";
 
 export const WaitingList = ({filteredTickets}) => {
 
-  const { user } = useUserState();
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 

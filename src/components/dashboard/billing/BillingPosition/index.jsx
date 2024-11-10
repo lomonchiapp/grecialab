@@ -168,7 +168,7 @@ export const BillingPosition = ({ canBill, setCanBill }) => {
           </Typography>
           <Typography sx={styles.patientLabel}>Servicio:</Typography>
           <Typography sx={styles.patientName}>
-            {billingTicket.services.map((service) => service.name).join(", ")}
+            {billingTicket.services?.map((service) => service.name).join(", ")}
           </Typography>
 
           <Box sx={styles.btnContainer}>
