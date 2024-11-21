@@ -22,7 +22,7 @@ import { ServiceSelection } from "./ServiceSelection";
 
 export const NewTicket = ({ setOpen }) => {
   const { fetchQueues } = useGlobalState();
-  const {selectedServices, selectedQueues, reset } = useNewTicketState();
+  const {selectedServices, selectedQueues, setSelectedServices, setSelectedQueues, reset } = useNewTicketState();
   const [isPrinting, setIsPrinting] = useState(false);
   const [generatedTicket, setGeneratedTicket] = useState("");
   const theme = useTheme();
