@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, IconButton, Typography } from "@mui/material";
+import { Box, IconButton, Typography, Dialog, DialogTitle, List, ListItem, ListItemButton, ListItemText } from "@mui/material";
 import { useGlobalState } from "../../../../hooks/global/useGlobalState";
 import { useUserState } from "../../../../hooks/global/useUserState";
 import { tokens } from "../../../../theme";
@@ -17,10 +17,13 @@ import { Check, CheckCircle, XCircle } from "@phosphor-icons/react";
 export const ActualTicket = ({filteredTickets}) => {
   const { tickets, fetchTickets, services } = useGlobalState();
   const { user } = useUserState();
-  const [processingTicket, setProcessingTicket] = useState(null);
+  const [processingTickets, setProcessingTickets] = useState([]);
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const [enabledButton, setEnabledButton] = useState(false);
+  const [serviceSelectionOpen, setServiceSelectionOpen] = useState(false);
+  const [availableServices, setAvailableServices] = useState([]);
+  const [pendingTicket, setPendingTicket] = useState(null);
 
   useEffect(() => {
 
@@ -120,108 +123,138 @@ export const ActualTicket = ({filteredTickets}) => {
 
   useEffect(() => {
     if (user && user.services) {
-      const processingTicket = tickets.find(
+      const currentProcessingTickets = tickets.filter(
         (ticket) =>
-          ticket.status === "processing" &&
-          ticket.user.authId === user.authId &&
           ticket.services.some((service) =>
-            user.services.some((userService) => userService.id === service.id)
+            user.services.some((userService) => 
+              userService.id === service.id && 
+              service.status === "processing"
+            )
           )
       );
-
-      setProcessingTicket(processingTicket);
-
-      console.log("Processing Ticket:", processingTicket);
+      setProcessingTickets(currentProcessingTickets);
     }
   }, [tickets, user]);
 
-const handleTakeTurn = () => {
-    const filteredTickets = tickets.filter(
-      (ticket) => {
-        return (
-          ticket.status === "inQueue" &&
-          ticket.services.some((service) =>
-            user?.services?.some((userService) => userService.id === service.id)
-          )
-        );
-      }
-    );
-
-    if (filteredTickets.length > 0) {
-      const ticketToProcess = filteredTickets[0];
-      setProcessingTicket(ticketToProcess);
-      // Update the ticket status to "processing" or any other logic you need
-      updateToProcessing(ticketToProcess.id, user, services);
-      console.log("Processing Ticket:", ticketToProcess);
+  const handleTakeTurn = async () => {
+    const ticketToProcess = filteredTickets[0];
+    const result = await updateToProcessing(ticketToProcess.id, user);
+    
+    if (result?.requiresSelection) {
+      setAvailableServices(result.matchingServices);
+      setPendingTicket(ticketToProcess);
+      setServiceSelectionOpen(true);
     } else {
-      console.log("No tickets available for processing");
-    }
-  };
-
-  const handleFinishTurn = async () => {
-    if (processingTicket) {
-      await updateToFinished(processingTicket.id, user);
-      setProcessingTicket(null);
       fetchTickets();
     }
   };
 
-  const handleCancelTurn = async () => {
-    if (processingTicket) {
-      await updateToCancelled(processingTicket.id, user);
-      setProcessingTicket(null);
-      fetchTickets();
+  const handleServiceSelection = async (serviceId) => {
+    await updateToProcessing(pendingTicket.id, user, serviceId);
+    setServiceSelectionOpen(false);
+    setPendingTicket(null);
+    fetchTickets();
+  };
+
+  const handleFinishTurn = async (ticketId) => {
+    await updateToFinished(ticketId, user);
+    fetchTickets();
+  };
+
+  const handleCancelTurn = async (ticketId) => {
+    await updateToCancelled(ticketId, user);
+    fetchTickets();
+  };
+
+  const additionalStyles = {
+    processingTicketsContainer: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+      gap: "16px",
+      marginBottom: "20px"
+    },
+    newPatientSection: {
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: "10px",
+      marginTop: "20px",
+      padding: "20px",
+      borderTop: `1px solid ${colors.primary[400]}`
+    },
+    serviceName: {
+      color: colors.greenAccent[500],
+      fontSize: "14px",
+      fontWeight: "bold",
+      textAlign: "center",
+      padding: "4px"
     }
   };
 
   return (
     <Box sx={styles.container}>
       <Box sx={styles.headerContainer}>
-        <Typography sx={styles.header}>Estado Actual</Typography>
+        <Typography sx={styles.header}>Pacientes en Atención</Typography>
       </Box>
-      {processingTicket ? (
-        <Box>
-          
-          <Box sx={styles.ticketContainer}>
-          <Box>
+      
+      <Box sx={styles.processingTicketsContainer}>
+        {processingTickets.map((ticket) => (
+          <Box key={ticket.id} sx={styles.ticketContainer}>
             <Typography sx={styles.ticketHeader}>Ticket#:</Typography>
-          </Box>
-            <Typography sx={styles.ticketCode}>
-              {processingTicket.ticketCode}
-            </Typography>
-            <Box>
+            <Typography sx={styles.ticketCode}>{ticket.ticketCode}</Typography>
+            
             <Typography sx={styles.ticketHeader}>Paciente:</Typography>
-            <Typography sx={styles.patientName}>{processingTicket.patientName}</Typography>
+            <Typography sx={styles.patientName}>{ticket.patientName}</Typography>
+            
+            <Typography sx={styles.ticketHeader}>Servicio en proceso:</Typography>
+            {ticket.services.map((service) => 
+              service.status === "processing" && (
+                <Typography key={service.id} sx={styles.serviceName}>
+                  {service.name}
+                </Typography>
+              )
+            )}
+            
+            <Box sx={styles.btnContainer}>
+              <IconButton onClick={() => handleFinishTurn(ticket.id)}>
+                <CheckCircle size={32} />
+              </IconButton>
+              <IconButton onClick={() => handleCancelTurn(ticket.id)}>
+                <XCircle size={32} />
+              </IconButton>
+            </Box>
           </Box>
-          </Box>
-          
-          <Box sx={styles.btnContainer}>
-            <IconButton onClick={() => handleFinishTurn()}>
-              <CheckCircle size={50} />
-            </IconButton>
-            <IconButton onClick={() => handleCancelTurn()}>
-              <XCircle size={50} />
-            </IconButton>
-          </Box>
-        </Box>
-      ) : (
-        <Box sx={styles.idleBox}>
-          <Typography sx={styles.idleText}>Puesto Libre</Typography>
-          <Button
-            disabled={!enabledButton}
-            variant="contained"
-            size="large"
-            onClick={() => handleTakeTurn()}
-          >
-            ATENDER PACIENTE
-          </Button>
-          {enabledButton && (
+        ))}
+      </Box>
+
+      <Box sx={styles.newPatientSection}>
+        <Button
+          disabled={!enabledButton}
+          variant="contained"
+          size="large"
+          onClick={() => handleTakeTurn()}
+        >
+          ATENDER NUEVO PACIENTE
+        </Button>
+        {enabledButton && (
           <Typography sx={styles.helperText}>
-            Espera a que algún paciente facture
-          </Typography> ) 
-          }
-        </Box>
-      )}
+            Hay pacientes esperando ser atendidos
+          </Typography>
+        )}
+      </Box>
+
+      <Dialog open={serviceSelectionOpen} onClose={() => setServiceSelectionOpen(false)}>
+        <DialogTitle>Seleccione el servicio a atender:</DialogTitle>
+        <List>
+          {availableServices.map((service) => (
+            <ListItem key={service.id}>
+              <ListItemButton onClick={() => handleServiceSelection(service.id)}>
+                <ListItemText primary={service.name} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </Dialog>
     </Box>
   );
 };

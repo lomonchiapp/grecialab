@@ -9,7 +9,7 @@ const DoctorBillingQueue = () => {
 
     const {tickets} = useGlobalState()
     const {user, fetchUser} = useUserState()
-    const filteredTickets = tickets.filter(ticket => ticket.status === 'pending' && ticket.service === user.service.id)
+    const filteredTickets = tickets.filter(ticket => ticket.status === 'pending' && ticket.services.some(service => service.id === user.service.id))
     
     const theme = useTheme()
     const colors = tokens(theme.palette.mode)

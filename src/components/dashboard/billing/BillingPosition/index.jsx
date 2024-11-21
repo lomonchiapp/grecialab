@@ -38,7 +38,7 @@ export const BillingPosition = ({ canBill, setCanBill }) => {
   const handleTakeTurn = async () => {
     const nextTicket = tickets
       .filter((ticket) => ticket.status === "pending")
-      .sort((a, b) => b.createdAt - a.createdAt)[0];
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))[0];
     await updateToBilling(nextTicket.id, user);
   };
 

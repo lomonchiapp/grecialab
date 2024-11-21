@@ -27,19 +27,24 @@ export const PendingList = ({canBill}) => {
   const [selectedServices, setSelectedServices] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [ticketsPerPage, setTicketsPerPage] = useState(5);
+  // Variables
   const initialTickets = tickets.filter(
     (ticket) => ticket.status === "pending"
   );
-  //Variables
+
   const sortTickets = initialTickets.sort(
     (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
   );
+
   const filteredTickets =
     selectedServices.length > 0
       ? sortTickets.filter((ticket) =>
-          selectedServices.includes(ticket.service)
+          ticket.services.some((service) =>
+            selectedServices.includes(service.id)
+          )
         )
       : sortTickets;
+
   const indexOfLastTicket = currentPage * ticketsPerPage;
   const indexOfFirstTicket = indexOfLastTicket - ticketsPerPage;
   const currentTickets = filteredTickets.slice(

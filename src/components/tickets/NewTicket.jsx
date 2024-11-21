@@ -124,8 +124,6 @@ export const NewTicket = ({ setOpen }) => {
     e.preventDefault();
     setIsPrinting(true);
     await newTicket(ticket, selectedQueues);
-    await handlePrint(ticketRef);
-    setIsPrinting(false);
     fetchQueues();
     // Clean State
     setTicket({
@@ -137,6 +135,11 @@ export const NewTicket = ({ setOpen }) => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
+    setGeneratedTicket("");
+    setSelectedServices([]);
+    setSelectedQueues([]);
+    await handlePrint(ticketRef);
+    setIsPrinting(false);
     // Close Dialog
     setOpen(false);
     reset();

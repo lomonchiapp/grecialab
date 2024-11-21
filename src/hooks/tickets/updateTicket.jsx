@@ -40,22 +40,40 @@ export const updateToBilling = async (ticketId, user) => {
 };
 
 // Esta funcion es para pasar el turno de espera a un puesto de atención
-export const updateToProcessing = async (ticketId, user, services) => {
+export const updateToProcessing = async (ticketId, user, selectedServiceId = null) => {
   const ticketRef = doc(database, "tickets", ticketId);
   const ticketSnap = await getDoc(ticketRef);
 
   if (ticketSnap.exists()) {
     const existingServices = ticketSnap.data().services;
+    
+    // Encontrar solo servicios pendientes que coincidan entre el ticket y el usuario
+    const matchingServices = user.services.filter(userService =>
+      existingServices.some(ticketService => 
+        ticketService.id === userService.id && 
+        ticketService.status === "pending"
+      )
+    );
+
+    // Si hay múltiples coincidencias y no se seleccionó un servicio específico
+    if (matchingServices.length > 1 && !selectedServiceId) {
+      return {
+        requiresSelection: true,
+        matchingServices: matchingServices
+      };
+    }
+
+    // Actualizar solo el servicio seleccionado o el único que coincide
     const updatedServices = existingServices.map((existingService) => {
       const serviceToUpdate = user.services.find(
-        (userService) => userService.id === existingService.id
+        (userService) => userService.id === existingService.id && 
+        (selectedServiceId ? userService.id === selectedServiceId : true)
       );
       if (serviceToUpdate) {
         return { ...existingService, status: "processing" };
       }
       return existingService;
     });
-
 
     await updateDoc(ticketRef, {
       services: updatedServices, // Se actualiza el estado de los servicios
@@ -103,10 +121,12 @@ export const updateToFinished = async (ticketId, user) => {
   if (ticketSnap.exists()) {
     const existingServices = ticketSnap.data().services;
 
-    // Update the status of the matching service to "finished"
+    // Actualizar solo el servicio que está en "processing" y coincide con los servicios del usuario
     const updatedServices = existingServices.map((existingService) => {
       const serviceToUpdate = user.services.find(
-        (userService) => userService.id === existingService.id
+        (userService) => 
+          userService.id === existingService.id && 
+          existingService.status === "processing"
       );
       if (serviceToUpdate) {
         return { ...existingService, status: "finished" };
@@ -114,12 +134,15 @@ export const updateToFinished = async (ticketId, user) => {
       return existingService;
     });
 
-    // Check if all services are finished
+    // Verificar si todos los servicios están finalizados
     const allServicesFinished = updatedServices.every(service => service.status === "finished");
 
-    // Find the matching service from the user's services
+    // Encontrar el servicio que se está finalizando
     const matchingService = user.services.find(userService =>
-      existingServices.some(service => service.id === userService.id)
+      existingServices.some(service => 
+        service.id === userService.id && 
+        service.status === "processing"
+      )
     );
 
     await updateDoc(ticketRef, {

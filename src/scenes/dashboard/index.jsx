@@ -31,7 +31,7 @@ function Dashboard() {
   return (
     <Box m="20px">
       <Box display="flex" justifyContent="space-between">
-        <Header title="Panel Principal" subtitle={`Vista del ${role}`} />
+        <Header title="Panel Principal" />
       </Box>
 
       {/* GRID & CHARTS */}
