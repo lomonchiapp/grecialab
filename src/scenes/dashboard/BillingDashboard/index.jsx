@@ -10,16 +10,21 @@ import { TotalTickets } from '../../../components/dashboard/billing/TotalTickets
 import { LastTicket } from '../../../components/dashboard/billing/LastTicket'
 import { PendingList } from '../../../components/dashboard/billing/PendingList'
 import { BilledTickets } from '../../../components/dashboard/billing/BilledTickets'
-import { FilePlus } from '@phosphor-icons/react'
+import { Broom, Empty, FilePlus } from '@phosphor-icons/react'
 import { IconButton } from '@mui/material'
 import { NewDialog } from '../../../components/NewDialog'
 import { NewTicket } from '../../../components/tickets/NewTicket'
+import { resetQueueCount } from '../../../hooks/queues/resetCount'
+import { resetAllQueuesCount } from '../../../hooks/queues/resetCount'
+import { ResetQueueMenu } from '../../../components/dashboard/billing/ResetQueueMenu'
 
 export const BillingDashboard = () => {
     const theme = useTheme();
    const colors = tokens(theme.palette.mode);
    const [newTicket, setNewTicket] = useState(false);
    const [canBill, setCanBill] = useState(false);
+   const [resetAnchorEl, setResetAnchorEl] = useState(null)
+
     const styles = {
 
         switchBox: {
@@ -46,15 +51,53 @@ export const BillingDashboard = () => {
             justifyContent: 'flex-end',
         }
     }
+
+    const handleResetClick = (event) => {
+        setResetAnchorEl(event.currentTarget)
+    }
+
+    const handleResetClose = () => {
+        setResetAnchorEl(null)
+    }
+
+    const handleQueueSelect = async (queueId) => {
+        await resetQueueCount(queueId)
+        // Aquí podrías agregar una notificación de éxito si lo deseas
+    }
+
   return (
     <Grid sx={styles.dashboard} container spacing={2}>
         <Grid item xs={10}>
         <Typography variant="h5">Panel de Facturación</Typography>
         </Grid>
-        <Grid sx={styles.newTicketButton} item xs={2}>
+         <Grid sx={styles.newTicketButton} item xs={2}>
             <IconButton sx={styles.newTicketIcon} onClick={() => setNewTicket(true)}>
                 <FilePlus size={32} />
             </IconButton>
+            {/* Botón para resetear una cola específica */}
+            <IconButton 
+                sx={styles.newTicketIcon} 
+                onClick={handleResetClick}
+                aria-label="reset-single"
+            >
+                <Empty size={32} />
+            </IconButton>
+            {/* Botón para resetear todas las colas */}
+            <IconButton 
+                sx={styles.newTicketIcon} 
+                onClick={() => resetAllQueuesCount()}
+                aria-label="reset-all"
+            >
+                <Broom size={32} />
+            </IconButton>
+
+            <ResetQueueMenu
+                anchorEl={resetAnchorEl}
+                open={Boolean(resetAnchorEl)}
+                handleClose={handleResetClose}
+                onQueueSelect={handleQueueSelect}
+            />
+
             <NewDialog open={newTicket} setOpen={setNewTicket}>
                 <NewTicket setOpen={setNewTicket} />
             </NewDialog>
