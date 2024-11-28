@@ -31,7 +31,7 @@ export const updateToBilling = async (ticketId, user) => {
       user: user,
       billingPosition: user.billingPosition,  // Se agrega el puesto de facturación  
       seen: false,
-      ticket: ticketId,
+      ticket: ticketSnap.data(),
       createdAt: new Date(),
     });
     toast.success("Turno de paciente en facturación.");
@@ -67,7 +67,8 @@ export const updateToProcessing = async (ticketId, user, selectedServiceId = nul
     const updatedServices = existingServices.map((existingService) => {
       const serviceToUpdate = user.services.find(
         (userService) => userService.id === existingService.id && 
-        (selectedServiceId ? userService.id === selectedServiceId : true)
+        (selectedServiceId ? userService.id === selectedServiceId : true) &&
+        existingService.status !== "finished"
       );
       if (serviceToUpdate) {
         return { ...existingService, status: "processing" };
@@ -82,22 +83,21 @@ export const updateToProcessing = async (ticketId, user, selectedServiceId = nul
       updatedAt: new Date(),
     });
 
-    const matchingService = user.services.find(userService =>
-      ticketSnap.data().services.some(service => service.id === userService.id)
-    );
+    // Obtener el servicio que se está actualizando
+    const serviceToNotify = updatedServices.find(service => service.status === "processing");
 
     toast.success("Turno de paciente transferido a tu puesto.");
 
     // CREACION DE LA NOTIFICACION
     addNotification({
-      title: `Paciente a Puesto de ${matchingService.name}`,
+      title: `Paciente a Puesto de ${serviceToNotify.name}`, // Usar serviceToNotify
       message: `El paciente ${ticketSnap.data().patientName} con turno ${
         ticketSnap.data().ticketCode
-      } esta siendo atendido en ${matchingService.name}.`,
+      } esta siendo atendido en ${serviceToNotify.name}.`, // Usar serviceToNotify
       user: user,
-      service: matchingService,
+      service: serviceToNotify, // Usar serviceToNotify
       seen: false,
-      ticketId: ticketId,
+      ticket: ticketSnap.data(),
       createdAt: new Date(),
     });
 
@@ -105,7 +105,7 @@ export const updateToProcessing = async (ticketId, user, selectedServiceId = nul
     const speechText = `${ticketSnap.data().patientName}, con turno, ${
       ticketSnap.data().ticketCode
     }, favor pasar al puesto de servicio ${
-      matchingService.name
+      serviceToNotify.name
     }`;
     sendTextToSpeech(speechText);
   } else {
@@ -121,41 +121,35 @@ export const updateToFinished = async (ticketId, user) => {
   if (ticketSnap.exists()) {
     const existingServices = ticketSnap.data().services;
 
-    // Actualizar solo el servicio que está en "processing" y coincide con los servicios del usuario
-    const updatedServices = existingServices.map((existingService) => {
-      const serviceToUpdate = user.services.find(
-        (userService) => 
-          userService.id === existingService.id && 
-          existingService.status === "processing"
-      );
-      if (serviceToUpdate) {
-        return { ...existingService, status: "finished" };
-      }
-      return existingService;
-    });
-
-    // Verificar si todos los servicios están finalizados
-    const allServicesFinished = updatedServices.every(service => service.status === "finished");
-
-    // Encontrar el servicio que se está finalizando
-    const matchingService = user.services.find(userService =>
-      existingServices.some(service => 
-        service.id === userService.id && 
-        service.status === "processing"
-      )
+    // Encontrar el servicio que está en "processing"
+    const serviceToUpdate = existingServices.find(existingService => 
+      existingService.status === "processing"
     );
 
-    await updateDoc(ticketRef, {
-      services: updatedServices,
-      status: allServicesFinished ? "finished" : "inQueue",
-      user: user,
-      finishedAt: new Date(),
-      updatedAt: new Date(),
-    });
+    if (serviceToUpdate) {
+      // Actualizar el servicio a "finished"
+      const updatedServices = existingServices.map(existingService => {
+        if (existingService.id === serviceToUpdate.id) {
+          return { ...existingService, status: "finished" };
+        }
+        return existingService;
+      });
 
-    toast.success(`Turno de paciente para el servicio ${matchingService.name} finalizado.`);
-    if (allServicesFinished) {
-      toast.success("Turno de paciente finalizado completamente.");
+      // Verificar si todos los servicios están finalizados
+      const allServicesFinished = updatedServices.every(service => service.status === "finished");
+
+      await updateDoc(ticketRef, {
+        services: updatedServices,
+        status: allServicesFinished ? "finished" : "inQueue",
+        user: user,
+        finishedAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      toast.success(`Turno de paciente para el servicio ${serviceToUpdate.name} finalizado.`);
+      if (allServicesFinished) {
+        toast.success("Turno de paciente finalizado completamente.");
+      }
     }
   }
 };
