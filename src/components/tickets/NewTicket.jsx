@@ -24,6 +24,7 @@ export const NewTicket = ({ setOpen }) => {
   const { fetchQueues } = useGlobalState();
   const {selectedServices, selectedQueues, setSelectedServices, setSelectedQueues, reset } = useNewTicketState();
   const [isPrinting, setIsPrinting] = useState(false);
+  const [isValid, setIsValid] = useState(false);
   const [generatedTicket, setGeneratedTicket] = useState("");
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
@@ -88,8 +89,12 @@ export const NewTicket = ({ setOpen }) => {
         const formattedCount = count.toString().padStart(2, "0");
         const ticketCode = `${selectedServices.map(service => service.name.slice(0, 1).toUpperCase()).join('')} - ${formattedCount}`;
         setGeneratedTicket(ticketCode);
+        setIsValid(true)
+      } else {
+        setIsValid(false)
       }
     }, [selectedServices, selectedQueues]);
+
 
   const [ticket, setTicket] = useState({
     patientName: "",
@@ -174,7 +179,7 @@ export const NewTicket = ({ setOpen }) => {
           variant="contained"
           color="primary"
           size="large"
-          disabled={!selectedQueues}
+          disabled={!isValid}
           onClick={onSubmit}
         >
           Crear

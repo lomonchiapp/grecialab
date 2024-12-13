@@ -29,8 +29,12 @@ export const updateToBilling = async (ticketId, user) => {
         ticketSnap.data().ticketCode
       } pase a ${user.billingPosition.name}.`,
       user: user,
-      billingPosition: user.billingPosition,  // Se agrega el puesto de facturación  
+      patient: ticketSnap.data().patientName,
+      ticketCode: ticketSnap.data().ticketCode,
+      billingPosition: user.billingPosition,  // Se agrega el puesto de facturación
+      service: null,
       seen: false,
+      ticketId: ticketId,
       ticket: ticketSnap.data(),
       createdAt: new Date(),
     });
@@ -98,6 +102,7 @@ export const updateToProcessing = async (ticketId, user, selectedServiceId = nul
       service: serviceToNotify, // Usar serviceToNotify
       seen: false,
       ticket: ticketSnap.data(),
+      ticketId: ticketId,
       createdAt: new Date(),
     });
 

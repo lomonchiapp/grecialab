@@ -12,7 +12,8 @@ import {
   updateToFinished,
   updateToProcessing,
 } from "../../../../hooks/tickets/updateTicket";
-import { Check, CheckCircle, XCircle } from "@phosphor-icons/react";
+import {  CheckCircle, XCircle, Repeat, UserSound } from "@phosphor-icons/react";
+import { repeatServiceNotification } from "../../../../hooks/notifications/repeatNotification";
 
 export const ActualTicket = ({filteredTickets}) => {
   const { tickets, fetchTickets, services } = useGlobalState();
@@ -149,6 +150,10 @@ export const ActualTicket = ({filteredTickets}) => {
     }
   };
 
+  const handleRepeatTurn = (ticketId) => {
+     repeatServiceNotification(ticketId);
+  };
+
   const handleServiceSelection = async (serviceId) => {
     await updateToProcessing(pendingTicket.id, user, serviceId);
     setServiceSelectionOpen(false);
@@ -219,9 +224,12 @@ export const ActualTicket = ({filteredTickets}) => {
               <IconButton onClick={() => handleFinishTurn(ticket.id)}>
                 <CheckCircle size={32} />
               </IconButton>
+              <IconButton onClick={() => handleRepeatTurn(ticket.id)}>
+                <UserSound size={32} />
+              </IconButton>
               <IconButton onClick={() => handleCancelTurn(ticket.id)}>
                 <XCircle size={32} />
-              </IconButton>
+              </IconButton>  
             </Box>
           </Box>
         ))}

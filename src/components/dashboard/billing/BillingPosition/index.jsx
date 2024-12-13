@@ -12,8 +12,9 @@ import {
   updateToBCancelled,
   updateToBilling,
 } from "../../../../hooks/tickets/updateTicket";
-import { Check, CheckCircle, XCircle } from "@phosphor-icons/react";
+import { Check, CheckCircle, XCircle, UserSound } from "@phosphor-icons/react";
 import { useBillingState } from "../../../../hooks/global/useBillingState";
+import { repeatBillingNotification } from "../../../../hooks/notifications/repeatNotification";
 
 export const BillingPosition = ({ canBill, setCanBill }) => {
   const { tickets, subscribeToTickets, services } = useGlobalState();
@@ -33,6 +34,10 @@ export const BillingPosition = ({ canBill, setCanBill }) => {
 
   const handleBCancel = async (ticketId) => {
     await updateToBCancelled(ticketId, user);
+  };
+
+  const handleRepeatTurn = async (ticketId) => {
+    await repeatBillingNotification(ticketId);
   };
 
   const handleTakeTurn = async () => {
@@ -173,10 +178,13 @@ export const BillingPosition = ({ canBill, setCanBill }) => {
 
           <Box sx={styles.btnContainer}>
             <IconButton onClick={() => handleBCancel(billingTicket.id)}>
-              <XCircle size={70} />
+              <XCircle size={50} />
+            </IconButton>
+            <IconButton onClick={() => handleRepeatTurn(billingTicket.id)}>
+              <UserSound size={50} />
             </IconButton>
             <IconButton onClick={() => handleBilling(billingTicket.id)}>
-              <CheckCircle size={70} />
+              <CheckCircle size={50} />
             </IconButton>
           </Box>
         </Box>

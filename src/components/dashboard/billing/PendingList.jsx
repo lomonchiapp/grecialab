@@ -1,19 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Box, Typography, Grid, IconButton, Button, FormGroup, FormControlLabel, Checkbox } from "@mui/material";
+import { Box, Typography, IconButton, Button, FormGroup, FormControlLabel, Checkbox } from "@mui/material";
 import { useGlobalState } from "../../../hooks/global/useGlobalState";
 import { useUserState } from "../../../hooks/global/useUserState";
 import { tokens } from "../../../theme";
 import { useTheme } from "@mui/material/styles";
 import { EmptyQueue } from "../common/EmptyQueue";
-import { useBillingState } from "../../../hooks/global/useBillingState";
 import {
-  DotsThreeOutlineVertical,
   HandCoins,
-  PersonSimpleWalk,
   XCircle,
 } from "@phosphor-icons/react";
 import {
-  updateToBilled,
   updateToBilling,
 } from "../../../hooks/tickets/updateTicket";
 import { ArrowBack } from "@mui/icons-material";
