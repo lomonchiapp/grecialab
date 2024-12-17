@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { Box, Typography, Grid } from "@mui/material";
+import { Box, Typography, Grid, IconButton } from "@mui/material";
 import { useGlobalState } from "../../../hooks/global/useGlobalState";
 import { useUserState } from "../../../hooks/global/useUserState";
 import { tokens } from "../../../theme";
 import { useTheme } from "@mui/material/styles";
 import { EmptyQueue } from "../common/EmptyQueue";
+import { updateToProcessing, updateToCancelled } from "../../../hooks/tickets/updateTicket";
+import { X } from "@phosphor-icons/react";
+import { PersonSimpleWalk } from "@phosphor-icons/react";
+
+
 
 export const WaitingList = ({filteredTickets}) => {
 
@@ -49,6 +54,11 @@ export const WaitingList = ({filteredTickets}) => {
     },
   };
 
+  const handleUpdateToProcessing = (ticketId, user, selectedService) => {
+    updateToProcessing(ticketId, user, selectedService);
+  }
+
+
   return (
     <Box sx={styles.waitingList}>
       <Box sx={styles.headerContainer}>
@@ -69,6 +79,12 @@ export const WaitingList = ({filteredTickets}) => {
             <Box>
               <Typography variant="body1">{ticket.patientName}</Typography>
             </Box>
+            <IconButton onClick={() => updateToProcessing(ticket.id)}>
+              <PersonSimpleWalk />
+            </IconButton>
+            <IconButton onClick={() => updateToCancelled(ticket.id)}>
+              <X />
+            </IconButton>
           </Box>
         ))
       )}
